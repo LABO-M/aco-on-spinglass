@@ -1,0 +1,6 @@
+# Ignore all files in the data directory
+data/*
+.vscode/
+
+# But do not ignore .gitkeep files
+!data/.gitkeep
