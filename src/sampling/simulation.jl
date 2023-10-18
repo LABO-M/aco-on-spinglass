@@ -39,7 +39,7 @@ function initialize_simulation(N::Int, X::Vector{Int}, S::Vector{Float64}, Sm::V
 end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Val{-1})
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
@@ -55,14 +55,14 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
         Zm = Sm ./ S[t-1]
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
 
-        X = rand.(Float64, N) .< prob
+        X .= rand.(Float64, N) .< prob
         TP = sum(X)
         S[t] = S[t-1] + TP
         Sm .+= X .* TP
     end
 
     # Compute z(t) values for the entire duration
-    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(1:(T), N)
+    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(collect(1:(T)), N)
     return Z
 end
 
@@ -89,7 +89,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
     end
 
     # Compute z(t) values for the entire duration
-    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(1:(T), tau, N)
+    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(collect(1:(T)), tau, N)
     return Z
 end
 

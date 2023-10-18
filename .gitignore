@@ -1,6 +1,7 @@
 # Ignore all files in the data directory
 data/*
 .vscode/
+__pycache__/
 
 # But do not ignore .gitkeep files
 !data/.gitkeep
