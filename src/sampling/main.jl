@@ -24,7 +24,7 @@ function main(args)
         arg_type = Float64
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 1_000
+        default = 100
         arg_type = Int
     end
 
@@ -41,7 +41,11 @@ function main(args)
     println("N = $(format_num(N)), T = $(format_num(T)), t0 = $(format_num(t0)), alpha = $(alpha), tau = $(tau_str)")
 
     # Run the simulation
-    Z = Simulation.simulate_ants(N, T, t0, alpha, tau)
+    if tau == -1
+        Z = Simulation.simulate_ants(N, T, t0, alpha)
+    else
+        Z = Simulation.simulate_ants(N, T, t0, alpha, tau)
+    end
 
     # Output Z values to CSV
     dir_Z = "data/Zt"

@@ -24,7 +24,7 @@ function initialize_simulation(N::Int, X::Vector{Int}, S::Vector{Float64}, Sm::V
     for t in 1:t0
         X .= rand(0:1, N)
         TP = sum(X)
-        S[t] = S[max(1, t-1)] + TP
+        S[t] = (t == 1 ? TP : S[t-1] + TP)
         Sm .+= X .* TP
     end
 end
@@ -33,13 +33,13 @@ function initialize_simulation(N::Int, X::Vector{Int}, S::Vector{Float64}, Sm::V
     for t in 1:t0
         X .= rand(0:1, N)
         TP = sum(X)
-        S[t] = S[max(1, t-1)] * exp_val + TP
-        Sm .= Sm * exp_val .+ X .* TP
+        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
+        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
     end
 end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Val{-1})
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
@@ -55,14 +55,15 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Val{-1})
         Zm = Sm ./ S[t-1]
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
 
-        X .= rand.(Float64, N) .< prob
+        X .= rand(Float64, N) .< prob
         TP = sum(X)
         S[t] = S[t-1] + TP
         Sm .+= X .* TP
     end
 
     # Compute z(t) values for the entire duration
-    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(collect(1:(T)), N)
+    time_range = 1:(t0 + T)
+    Z = S[time_range] ./ discount_factor(collect(time_range), N)
     return Z
 end
 
@@ -89,7 +90,8 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
     end
 
     # Compute z(t) values for the entire duration
-    Z = S[(t0 + 1):(t0 + T)] ./ discount_factor(collect(1:(T)), tau, N)
+    time_range = 1:(t0 + T)
+    Z = S[time_range] ./ discount_factor(collect(time_range), tau, N)
     return Z
 end
 

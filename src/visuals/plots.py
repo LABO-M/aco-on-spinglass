@@ -25,7 +25,7 @@ def plot_zt(csv_filepath):
 
     # y軸の指数表示をオフ
     plt.gca().yaxis.set_major_formatter(plt.ScalarFormatter())
-    # plt.xlim(1e3, 1e9)
+    plt.xlim({params['t0'], params['T']})
 
     plt.grid(True, which="both", ls="--")
     plt.xscale('log')
