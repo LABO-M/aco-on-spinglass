@@ -12,7 +12,7 @@ function main(args)
         arg_type = Int
         "--T"
         help = "Total number of time steps"
-        default = 1_000_000
+        default = 10_000_000
         arg_type = Int
         "--t0"
         help = "Initial time steps for initialization"
@@ -36,9 +36,9 @@ function main(args)
     tau = parsed_args["tau"]
 
     # Log the simulation parameters
-    tau_str = (tau == -1) ? "inf" : format_num(tau)
+    tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(format_num(N)), T = $(format_num(T)), t0 = $(format_num(t0)), alpha = $(alpha), tau = $(tau_str)")
+    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str)")
 
     # Run the simulation
     if tau == -1
@@ -52,7 +52,7 @@ function main(args)
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(format_num(N))_T$(format_num(T))_t0$(format_num(t0))_alpha$(alpha)_tau$(tau_str).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str).csv")
     save_Z_to_csv(Z, filename_Z)
     end
 
