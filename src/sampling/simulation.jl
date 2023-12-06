@@ -1,6 +1,6 @@
 module Simulation
 
-using Random, ProgressMeter
+using Random, ProgressMeter, Statistics, Distributed, SharedArrays
 
 const DEFAULT_EPSILON = 0.01  # Define epsilon as a constant at the top of the code
 
@@ -47,11 +47,8 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
     # Initialization
     initialize_simulation(N, X, S, Sm, t0)
 
-    progressBar = Progress(T, 1, "Simulation")
-
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
-        next!(progressBar)
         Zm = Sm ./ S[t-1]
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
 
@@ -76,11 +73,8 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
     # Initialization
     initialize_simulation(N, X, S, Sm, t0, exp_val)
 
-    progressBar = Progress(T, 1, "Simulation")
-
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
-        next!(progressBar)
         Zm = Sm ./ S[t-1]
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
         X .= rand(Float64, N) .< prob
@@ -93,6 +87,30 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
     time_range = 1:(t0 + T)
     Z = S[time_range] ./ discount_factor(collect(time_range), tau, N)
     return Z
+end
+
+# Function to sample Z values
+function sampleAntSimulation(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int)::Tuple{Vector{Float64}, Vector{Float64}}
+    Z_samples = SharedArray{Float64}((T + t0), samples)
+
+    progressBar = Progress(samples * T, 1, "Samples: ")
+    ProgressMeter.update!(progressBar, 0)
+
+    @sync @distributed for i in 1:samples
+        if tau == -1
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha)
+        else
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau)
+        end
+    end
+
+    println("Finished simulation")
+
+    # Calculate mean and standard deviation values
+    Z_mean = mean(Z_samples, dims=2)
+    Z_std = std(Z_samples, dims=2)
+
+    return vec(Z_mean), vec(Z_std)
 end
 
 end
