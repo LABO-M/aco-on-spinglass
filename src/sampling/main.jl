@@ -52,7 +52,7 @@ function main(args)
     println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample))")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sampleAntSimulation(N, T, t0, alpha, tau, sample)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
