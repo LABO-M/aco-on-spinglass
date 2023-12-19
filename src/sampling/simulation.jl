@@ -19,33 +19,46 @@ function discount_factor(t::Vector{Int}, N::Int)::Vector{Float64}
     return N .* t
 end
 
+# Calculate the total pheromone value
+function culculate_TP(N::Int, X::Vector{Int}, h::Float64, J::Float64)
+    X_spin = 2*X .- 1
+    TP = 0
+    TP += sum(X_spin .* h) * (1/N)
+    for i in 1:N, j in 1:N
+        if i != j
+            TP += J * X_spin[i] * X_spin[j] * (1/(N*(N-1)))
+        end
+    end
+    return TP
+end
+
 # Initialize the simulation up to the initial time t0.
-function initialize_simulation(N::Int, X::Vector{Int}, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int)
+function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int)
     for t in 1:t0
         X .= rand(0:1, N)
-        TP = sum(X)
+        TP = culculate_TP(N, X, h, J)
         S[t] = (t == 1 ? TP : S[t-1] + TP)
         Sm .+= X .* TP
     end
 end
 
-function initialize_simulation(N::Int, X::Vector{Int}, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, exp_val::Float64)
+function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, exp_val::Float64)
     for t in 1:t0
         X .= rand(0:1, N)
-        TP = sum(X)
+        TP = culculate_TP(N, X, h, J)
         S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
     end
 end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
 
     # Initialization
-    initialize_simulation(N, X, S, Sm, t0)
+    initialize_simulation(N, X, h, J, S, Sm, t0)
 
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
@@ -53,7 +66,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
 
         X .= rand(Float64, N) .< prob
-        TP = sum(X)
+        TP = culculate_TP(N, X, h, J)
         S[t] = S[t-1] + TP
         Sm .+= X .* TP
     end
@@ -64,21 +77,21 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64)
     return Z
 end
 
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Float64, J::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
     exp_val = exp(-1 / tau)
 
     # Initialization
-    initialize_simulation(N, X, S, Sm, t0, exp_val)
+    initialize_simulation(N, X, h, J, S, Sm, t0, exp_val)
 
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
         Zm = Sm ./ S[t-1]
         prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
         X .= rand(Float64, N) .< prob
-        TP = sum(X)
+        TP = culculate_TP(N, X, h, J)
         S[t] = S[t-1] * exp_val + TP
         Sm .= Sm * exp_val .+ X .* TP
     end
@@ -90,7 +103,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int)
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int)::Tuple{Vector{Float64}, Vector{Float64}}
+function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
     Z_samples = SharedArray{Float64}((T + t0), samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
@@ -98,9 +111,9 @@ function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples:
 
     @sync @distributed for i in 1:samples
         if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha)
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, h, J)
         else
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau)
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau, h, J)
         end
     end
 

@@ -8,17 +8,17 @@ function main(args)
     @add_arg_table! s begin
         "--N"
         help = "Number of questions (quizzes)"
-        default = 100
+        default = 10
         arg_type = Int
 
         "--T"
         help = "Total number of time steps"
-        default = 10_000_000
+        default = 10_000
         arg_type = Int
 
         "--t0"
         help = "Initial time steps for initialization"
-        default = 100_000
+        default = 100
         arg_type = Int
 
         "--alpha"
@@ -29,12 +29,22 @@ function main(args)
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
         default = 100
-
         arg_type = Int
+        
         "--sample"
         help = "Sample size."
-        default = 100
+        default = 10
         arg_type = Int
+
+        "--h"
+        help = "Magnetic field"
+        default = 1.0
+        arg_type = Float64
+
+        "--J"
+        help = "Interaction matrix"
+        default = 1.0
+        arg_type = Float64
 
     end
 
@@ -45,21 +55,23 @@ function main(args)
     alpha = parsed_args["alpha"]
     tau = parsed_args["tau"]
     sample = parsed_args["sample"]
+    h = parsed_args["h"]
+    J = parsed_args["J"]
 
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample))")
+    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str)_h$(h)_J$(J).csv")
     save_Z_to_csv(Z_mean, Z_std, filename_Z)
     end
 
