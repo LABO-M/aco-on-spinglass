@@ -5,8 +5,8 @@ using Random, ProgressMeter, Statistics, Distributed, SharedArrays
 const DEFAULT_EPSILON = 0.01  # Define epsilon as a constant at the top of the code
 
 # Decision function f(z)
-function decision_function(z::Float64, alpha::Float64, epsilon::Float64)
-    return (1 - epsilon) * ((z^alpha) / (z^alpha + (1 - z)^alpha)) + 0.5 * epsilon
+function decision_function(z::Float64, alpha::Float64, epsilon::Float64, K::Float64)
+    return (1 - epsilon) * (((z + K)^alpha) / ((z + K)^alpha + (1 - z + K)^alpha)) + 0.5 * epsilon
 end
 
 # Discount factor D(t) for finite tau
@@ -52,7 +52,7 @@ function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S
 end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::Float64)
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::Float64, K::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
@@ -63,7 +63,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
         Zm = Sm ./ S[t-1]
-        prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
+        prob = decision_function.(Zm, alpha, DEFAULT_EPSILON, K)
 
         X .= rand(Float64, N) .< prob
         TP = culculate_TP(N, X, h, J)
@@ -77,7 +77,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
     return Z
 end
 
-function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Float64, J::Float64)
+function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Float64, J::Float64, K::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
@@ -89,7 +89,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
         Zm = Sm ./ S[t-1]
-        prob = decision_function.(Zm, alpha, DEFAULT_EPSILON)
+        prob = decision_function.(Zm, alpha, DEFAULT_EPSILON, K)
         X .= rand(Float64, N) .< prob
         TP = culculate_TP(N, X, h, J)
         S[t] = S[t-1] * exp_val + TP
@@ -103,7 +103,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
+function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, K::Float)::Tuple{Vector{Float64}, Vector{Float64}}
     Z_samples = SharedArray{Float64}((T + t0), samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
@@ -111,9 +111,9 @@ function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples:
 
     @sync @distributed for i in 1:samples
         if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, h, J)
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, h, J, K)
         else
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau, h, J)
+            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau, h, J, K)
         end
     end
 

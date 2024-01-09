@@ -46,6 +46,11 @@ function main(args)
         default = 1.0
         arg_type = Float64
 
+        "--K"
+        help = "Constant K for the decision function"
+        default = 10.0
+        arg_type = Float64
+
     end
 
     parsed_args = parse_args(args, s)
