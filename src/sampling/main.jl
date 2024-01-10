@@ -23,7 +23,7 @@ function main(args)
 
         "--alpha"
         help = "Exponent parameter alpha"
-        default = 1.0
+        default = 0.5
         arg_type = Float64
 
         "--tau"
@@ -38,7 +38,7 @@ function main(args)
 
         "--h"
         help = "Magnetic field"
-        default = 1.0
+        default = 0.0
         arg_type = Float64
 
         "--J"

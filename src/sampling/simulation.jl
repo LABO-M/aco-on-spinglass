@@ -103,7 +103,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, C::Float)::Tuple{Vector{Float64}, Vector{Float64}}
+function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, C::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
     Z_samples = SharedArray{Float64}((T + t0), samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
