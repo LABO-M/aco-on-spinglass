@@ -46,9 +46,9 @@ function main(args)
         default = 1.0
         arg_type = Float64
 
-        "--K"
-        help = "Constant K for the decision function"
-        default = 10.0
+        "--C"
+        help = "Constant C for the pheromone value"
+        default = 2.0
         arg_type = Float64
 
     end
@@ -62,6 +62,7 @@ function main(args)
     sample = parsed_args["sample"]
     h = parsed_args["h"]
     J = parsed_args["J"]
+    C = parsed_args["C"]
 
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
@@ -69,7 +70,7 @@ function main(args)
     println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J, C)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
