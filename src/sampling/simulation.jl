@@ -11,12 +11,12 @@ end
 
 # Discount factor D(t) for finite tau
 function discount_factor(t::Vector{Int}, tau::Int, N::Int)::Vector{Float64}
-    return N .* (1.0 .- exp.(-t ./ tau)) ./ (1.0 - exp(-1/tau))
+    return (1.0 .- exp.(-t ./ tau)) ./ (1.0 - exp(-1/tau))
 end
 
 # Discount factor D(t) for infinite tau
 function discount_factor(t::Vector{Int}, N::Int)::Vector{Float64}
-    return N .* t
+    return t
 end
 
 # Calculate the total pheromone value
@@ -84,7 +84,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
     exp_val = exp(-1 / tau)
 
     # Initialization
-    initialize_simulation(N, X, h, J, S, Sm, t0, exp_val)
+    initialize_simulation(N, X, h, J, S, Sm, t0, exp_val, C)
 
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
