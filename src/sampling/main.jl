@@ -18,7 +18,7 @@ function main(args)
 
         "--t0"
         help = "Initial time steps for initialization"
-        default = 100
+        default = 1
         arg_type = Int
 
         "--alpha"
@@ -28,7 +28,7 @@ function main(args)
 
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 100
+        default = 10
         arg_type = Int
         
         "--sample"

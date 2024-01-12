@@ -10,12 +10,12 @@ function decision_function(z::Float64, alpha::Float64)
 end
 
 # Discount factor D(t) for finite tau
-function discount_factor(t::Vector{Int}, tau::Int, N::Int)::Vector{Float64}
+function discount_factor(t::Vector{Int}, tau::Int)::Vector{Float64}
     return (1.0 .- exp.(-t ./ tau)) ./ (1.0 - exp(-1/tau))
 end
 
 # Discount factor D(t) for infinite tau
-function discount_factor(t::Vector{Int}, N::Int)::Vector{Float64}
+function discount_factor(t::Vector{Int})::Vector{Float64}
     return t
 end
 
@@ -73,7 +73,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
 
     # Compute z(t) values for the entire duration
     time_range = 1:(t0 + T)
-    Z = S[time_range] ./ discount_factor(collect(time_range), N)
+    Z = S[time_range] ./ discount_factor(collect(time_range))
     return Z
 end
 
@@ -98,7 +98,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
 
     # Compute z(t) values for the entire duration
     time_range = 1:(t0 + T)
-    Z = S[time_range] ./ discount_factor(collect(time_range), tau, N)
+    Z = S[time_range] ./ discount_factor(collect(time_range), tau)
     return Z
 end
 
