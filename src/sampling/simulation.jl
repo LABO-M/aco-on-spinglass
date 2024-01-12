@@ -56,6 +56,7 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
+    Zm_last = zeros(Float64, 10*N)
 
     # Initialization
     initialize_simulation(N, X, h, J, S, Sm, t0, C)
@@ -63,9 +64,13 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
         Zm = Sm ./ S[t-1]
+        if t > T - 10
+            start_idx = (t - (T - 9)) * N
+            Zm_last[start_idx + 1 : start_idx + N] = Zm
+        end
         prob = decision_function.(Zm, alpha)
-
-        X .= rand(Float64, N) .< prob
+        rand_value = rand(Float64, N)
+        X .= rand_value .< prob
         TP = culculate_TP(N, X, h, J, C)
         S[t] = S[t-1] + TP
         Sm .+= X .* TP
@@ -74,13 +79,14 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, J::F
     # Compute z(t) values for the entire duration
     time_range = 1:(t0 + T)
     Z = S[time_range] ./ discount_factor(collect(time_range))
-    return Z
+    return Zm_last
 end
 
 function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Float64, J::Float64, C::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T + t0)
+    Zm_last = zeros(Float64, 10*N)
     exp_val = exp(-1 / tau)
 
     # Initialization
@@ -89,8 +95,13 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
     # Main simulation loop
     for t in (t0 + 1):(t0 + T)
         Zm = Sm ./ S[t-1]
+        if t > T - 10
+            start_idx = (t - (T - 9)) * N
+            Zm_last[start_idx + 1 : start_idx + N] = Zm
+        end
         prob = decision_function.(Zm, alpha)
-        X .= rand(Float64, N) .< prob
+        rand_value = rand(Float64, N)
+        X .= rand_value .< prob
         TP = culculate_TP(N, X, h, J, C)
         S[t] = S[t-1] * exp_val + TP
         Sm .= Sm * exp_val .+ X .* TP
@@ -99,29 +110,33 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
     # Compute z(t) values for the entire duration
     time_range = 1:(t0 + T)
     Z = S[time_range] ./ discount_factor(collect(time_range), tau)
-    return Z
+    return Zm_last
 end
 
 # Function to sample Z values
 function sample_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, C::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
-    Z_samples = SharedArray{Float64}((T + t0), samples)
+    Zm_samples = zeros(Float64, 10*N*samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
     ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
         if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, h, J, C)
+            Zm_last = simulate_ants(N, T, t0, alpha, h, J, C)
+            start_idx = (i - 1) * 10 * N + 1
+            Zm_samples[start_idx : start_idx + 10*N - 1] = Zm_last
         else
-            Z_samples[:, i] = simulate_ants(N, T, t0, alpha, tau, h, J, C)
+            Zm_last = simulate_ants(N, T, t0, alpha, tau, h, J, C)
+            start_idx = (i - 1) * 10 * N + 1
+            Zm_samples[start_idx : start_idx + 10*N - 1] = Zm_last
         end
     end
 
     println("Finished simulation")
 
     # Calculate mean and standard deviation values
-    Z_mean = mean(Z_samples, dims=2)
-    Z_std = std(Z_samples, dims=2)
+    Z_mean = mean(Zm_samples, dims=2)
+    Z_std = std(Zm_samples, dims=2)
 
     return vec(Z_mean), vec(Z_std)
 end
