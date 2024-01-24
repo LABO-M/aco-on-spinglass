@@ -19,6 +19,14 @@ function discount_factor(t::Vector{Int})::Vector{Float64}
     return t
 end
 
+#Create a random spin symmetric matrix
+function create_random_symmetric_matrix(N::Int)::Symmetric{Int, Matrix{Float64}}
+    A = zeros(Int, N, N)
+    A .= rand(0:1, N, N)
+    J = Symmetric(A)
+    return J
+end
+
 # Calculate the total pheromone value
 function culculate_TP(N::Int, X::Vector{Int}, h::Float64, J::Float64, C::Float64)
     X_spin = 2*X .- 1
