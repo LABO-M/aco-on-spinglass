@@ -13,7 +13,7 @@ function main(args)
 
         "--T"
         help = "Total number of time steps"
-        default = 10_000
+        default = 1_000_000
         arg_type = Int
 
         "--t0"
@@ -23,7 +23,7 @@ function main(args)
 
         "--alpha"
         help = "Exponent parameter alpha"
-        default = 0.5
+        default = 0.1
         arg_type = Float64
 
         "--tau"
