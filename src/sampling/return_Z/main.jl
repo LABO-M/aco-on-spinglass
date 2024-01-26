@@ -18,7 +18,7 @@ function main(args)
 
         "--t0"
         help = "Initial time steps for initialization"
-        default = 1
+        default = 100
         arg_type = Int
 
         "--alpha"
