@@ -8,7 +8,7 @@ function main(args)
     @add_arg_table! s begin
         "--N"
         help = "Number of questions (quizzes)"
-        default = 10
+        default = 20
         arg_type = Int
 
         "--T"
@@ -56,6 +56,7 @@ function main(args)
     tau = parsed_args["tau"]
     sample = parsed_args["sample"]
     h = parsed_args["h"]
+    J = parsed_args["J"]
     C = parsed_args["C"]
 
     # Log the simulation parameters
@@ -64,14 +65,14 @@ function main(args)
     println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h)")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, C)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J, C)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
     save_Z_to_csv(Z_mean, Z_std, filename_Z)
     end
 
