@@ -28,7 +28,7 @@ function main(args)
 
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 10
+        default = 100
         arg_type = Int
         
         "--sample"

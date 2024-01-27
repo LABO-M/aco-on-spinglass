@@ -109,9 +109,12 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, h::Float64, C::F
         push!(ACO_energy, TP/Max_energy)
         S[t] = S[t-1] + TP
         Sm .+= X .* TP
-        if t % 10000 == 0
-            alpha += 0.01
+        if alpha < 1.0
+            if t % 10000 == 0
+                alpha += 0.01
+            end
         end
+
     end
 
     return ACO_energy
@@ -140,8 +143,10 @@ function simulate_ants(N::Int, T::Int, t0::Int, alpha::Float64, tau::Int, h::Flo
         push!(ACO_energy, TP/Max_energy)
         S[t] = S[t-1] * exp_val + TP
         Sm .= Sm * exp_val .+ X .* TP
-        if t % 10000 == 0
-            alpha += 0.01
+        if alpha < 1.0
+            if t % 10000 == 0
+                alpha += 0.01
+            end
         end
     end
 
