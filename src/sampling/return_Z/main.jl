@@ -41,10 +41,20 @@ function main(args)
         default = 0.01
         arg_type = Float64
 
+        "--J"
+        help = "Coupling constant"
+        default = 1.0
+        arg_type = Float64
+
         "--C"
         help = "Constant C for the pheromone value"
         default = 2.0
         arg_type = Float64
+
+        "--chunk_size"
+        help = "Chunk size for parallelization"
+        default = 100
+        arg_type = Int
 
     end
 
@@ -58,14 +68,15 @@ function main(args)
     h = parsed_args["h"]
     J = parsed_args["J"]
     C = parsed_args["C"]
+    chunk_size = parsed_args["chunk_size"]
 
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h)")
+    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J), C = $(C)")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J, C)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J, C, chunk_size)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
