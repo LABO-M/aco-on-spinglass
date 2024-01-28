@@ -13,17 +13,12 @@ function main(args)
 
         "--T"
         help = "Total number of time steps"
-        default = 1_000_000
-        arg_type = Int
-
-        "--t0"
-        help = "Initial time steps for initialization"
-        default = 100
+        default = 1_100_000
         arg_type = Int
 
         "--alpha"
         help = "Exponent parameter alpha"
-        default = 0.1
+        default = 0.0
         arg_type = Float64
 
         "--tau"
@@ -61,7 +56,6 @@ function main(args)
     parsed_args = parse_args(args, s)
     N = parsed_args["N"]
     T = parsed_args["T"]
-    t0 = parsed_args["t0"]
     alpha = parsed_args["alpha"]
     tau = parsed_args["tau"]
     sample = parsed_args["sample"]
@@ -73,17 +67,17 @@ function main(args)
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), t0 = $(int_to_SI_prefix(t0)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J), C = $(C)")
+    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), alpha = $(alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J), C = $(C)")
 
     # Run the simulation
-    Z_mean, Z_std = Simulation.sample_ants(N, T, t0, alpha, tau, sample, h, J, C, chunk_size)
+    Z_mean, Z_std = Simulation.sample_ants(N, T, alpha, tau, sample, h, J, C, chunk_size)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_t0$(int_to_SI_prefix(t0))_alpha$(alpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_alpha$(alpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
     save_Z_to_csv(Z_mean, Z_std, filename_Z)
     end
 
