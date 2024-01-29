@@ -28,7 +28,7 @@ function main(args)
         
         "--sample"
         help = "Sample size."
-        default = 10
+        default = 1
         arg_type = Int
 
         "--h"
