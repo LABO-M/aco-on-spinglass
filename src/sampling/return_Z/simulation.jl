@@ -56,7 +56,7 @@ end
 #end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, alpha::Float64, h::Float64,  J::Float64, C::Float64)
+function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, h::Float64,  J::Float64, C::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -68,25 +68,22 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, h::Float64,  J::Float64, 
 
     # Main simulation loop
     for t in 1:T
-        prob = decision_function.(Zm, alpha)
+        prob = decision_function.(Zm, ialpha)
         X .= rand(Float64, N) .< prob
         TP = culculate_TP(N, X, h, J, C)
         push!(ACO_energy, TP/Max_energy)
         S[t] = (t == 1 ? TP : S[t-1] + TP)
         Sm .+= X .* TP
         Zm = Sm ./ S[t]
-        if alpha < 1.0
-            if t % 10000 == 0
-                alpha += 0.01
-            end
+        if t == 10000
+            ialpha = malpha
         end
-
     end
 
     return ACO_energy
 end
 
-function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, h::Float64, J::Float64, C::Float64)
+function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int, h::Float64, J::Float64, C::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -99,17 +96,15 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, h::Float64, J::
 
     # Main simulation loop
     for t in 1:T
-        prob = decision_function.(Zm, alpha)
+        prob = decision_function.(Zm, ialpha)
         X .= rand(Float64, N) .< prob
         TP = culculate_TP(N, X, h, J, C)
         push!(ACO_energy, TP/Max_energy)
         S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
-        if alpha < 1.0
-            if t % 10000 == 0
-                alpha += 0.01
-            end
+        if t == 10000
+            ialpha = malpha
         end
     end
 
@@ -118,7 +113,7 @@ end
 
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, C::Float64, chunk_size::Int)::Tuple{Vector{Float64}, Vector{Float64}}
+function sample_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64, C::Float64, chunk_size::Int)::Tuple{Vector{Float64}, Vector{Float64}}
     Z_samples = SharedArray{Float64}(T, samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
@@ -126,9 +121,9 @@ function sample_ants(N::Int, T::Int, alpha::Float64, tau::Int, samples::Int, h::
 
     @sync @distributed for i in 1:samples
         if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, alpha, h, J, C)
+            Z_samples[:, i] = simulate_ants(N, T, ialpha, malpha, h, J, C)
         else
-            Z_samples[:, i] = simulate_ants(N, T, alpha, tau, h, J, C)
+            Z_samples[:, i] = simulate_ants(N, T, ialpha, malpha, tau, h, J, C)
         end
     end
 
