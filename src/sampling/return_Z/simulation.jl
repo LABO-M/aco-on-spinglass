@@ -83,6 +83,7 @@ function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, h::Floa
     return ACO_energy
 end
 
+
 function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int, h::Float64, J::Float64, C::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
