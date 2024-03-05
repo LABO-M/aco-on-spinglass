@@ -13,7 +13,7 @@ function main(args)
 
         "--T"
         help = "Total number of time steps"
-        default = 1_100_000
+        default = 100_000
         arg_type = Int
 
         "--ialpha"
@@ -33,7 +33,7 @@ function main(args)
         
         "--sample"
         help = "Sample size."
-        default = 2
+        default = 100
         arg_type = Int
 
         "--h"
