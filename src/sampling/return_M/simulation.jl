@@ -18,13 +18,13 @@ function discount_factor(t::Vector{Int})::Vector{Float64}
 end
 
 #Calculate the maximum energy
-function culculate_max_energy(J::Float64, h::Float64)
-    TP = h + J
+function culculate_min_energy(J::Float64, h::Float64)
+    TP = -h + -J
     return TP
 end
 
 # Calculate the total pheromone value
-function culculate_TP(N::Int, X::Vector{Int}, h::Float64, J::Float64)
+function culculate_Pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)
     X_spin = 2*X .- 1
     TP = 0
     TP += sum(X_spin .* -h) * (1/N)
@@ -33,8 +33,9 @@ function culculate_TP(N::Int, X::Vector{Int}, h::Float64, J::Float64)
             TP += -J * X_spin[i] * X_spin[j] * (1/(N*(N-1)))
         end
     end
+    Pheromone = exp(-TP)
 
-    return TP
+    return Pheromone
 end
 
 ## Initialize the simulation up to the initial time t0.
@@ -57,95 +58,92 @@ end
 #end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, alpha::Float64, h::Float64,  J::Float64)
-    X = zeros(Int, N)
-    Sm = zeros(Float64, N)
-    S = zeros(Float64, T)
-    Zm = ones(Float64, N) * 0.5
-    ACO_energy = []
-
-    #Find the max energy and max spin
-    Max_energy = culculate_max_energy(J, h)
-
-    # Main simulation loop
-    for t in 1:T
-        prob = decision_function.(Zm, alpha)
-        X .= rand(Float64, N) .< prob
-        TP = culculate_TP(N, X, h, J)
-        push!(ACO_energy, TP/Max_energy)
-        S[t] = (t == 1 ? TP : S[t-1] + TP)
-        Sm .+= X .* TP
-        Zm = Sm ./ S[t]
-        if alpha < 1.0
-            if t % 10000 == 0
-                alpha += 0.01
-            end
-        end
-
-    end
-
-    return ACO_energy
-end
-
-function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, h::Float64, J::Float64)
+function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64)
+    T = convert(Int, round((falpha + 0.2) * 10000000))
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
     Zm = ones(Float64, N) * 0.5
     exp_val = exp(-1 / tau)
-    ACO_energy = []
+    M = zeros(Float64, T)
 
-    #Find the max energy and max spin
-    Max_energy = culculate_max_energy(J, h)
 
     # Main simulation loop
     for t in 1:T
         prob = decision_function.(Zm, alpha)
         X .= rand(Float64, N) .< prob
-        TP = culculate_TP(N, X, h, J)
-        push!(ACO_energy, TP/Max_energy)
+        TP = culculate_Pheromone(N, X, h, J)
         S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
-        if alpha < 1.0
-            if t % 10000 == 0
+        if alpha < falpha
+            if t % 100000 == 0
                 alpha += 0.01
             end
         end
     end
+    M = 2 * alpha * (Zm .- 0.5)
 
-    return ACO_energy
+    return M
 end
 
+function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64)
+    T = convert(Int, round((falpha + 0.3) * 10000000))
+    X = zeros(Int, N)
+    Sm = zeros(Float64, N)
+    S = zeros(Float64, T)
+    Zm = ones(Float64, N) * 0.5
+    exp_val = exp(-1 / tau)
+    M = zeros(Float64, T)
+    critical_time = calpha * 10000000 + 2000000
+
+    # Main simulation loop
+    for t in 1:T
+        prob = decision_function.(Zm, alpha)
+        X .= rand(Float64, N) .< prob
+        TP = culculate_Pheromone(N, X, h, J)
+        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
+        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
+        Zm = Sm ./ S[t]
+        if alpha < calpha
+            if t % 100000 == 0
+                alpha += 0.01
+            end
+        else
+            if t >= critical_time && alpha < falpha
+                if t % 100000 ==0
+                    alpha += 0.01
+                end
+            end    
+        end
+    end
+    M = 2 * alpha * (Zm .- 0.5)
+
+    return M
+end
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)::Tuple{Vector{Float64}, Vector{Float64}}
+function sample_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
     Z_samples = SharedArray{Float64}(N, samples)
 
-    progressBar = Progress(samples * T, 1, "Samples: ")
-    ProgressMeter.update!(progressBar, 0)
+    #progressBar = Progress(samples * T, 1, "Samples: ")
+    #ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
-        if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, alpha, h, J)
+        if calpha == 0.0
+            Z_samples[:, i] = simulate_ants(N, alpha, falpha, tau, h, J)
         else
-            Z_samples[:, i] = simulate_ants(N, T, alpha, tau, h, J)
+            Z_samples[:, i] = simulate_ants(N, alpha, calpha, falpha, tau, h, J)
         end
     end
 
     println("Finished simulation")
 
-    # Calculate mean and standard deviation values
-    Z_sample_mean = mean(Z_samples, dims=2)
-    Z_mean = []
-    Z_std = []
-    num_chunk = Int(T/chunk_size)
-    for i in 1:num_chunk
-        push!(Z_mean, mean(Z_sample_mean[(i-1)*chunk_size+1:i*chunk_size]))
-        push!(Z_std, std(Z_sample_mean[(i-1)*chunk_size+1:i*chunk_size]))
-    end
+    #Create M vector
+    Z_M = vcat(Z_samples...)
 
-    return vec(Z_mean), vec(Z_std)
+    return Z_M
+
 end
 
 end
