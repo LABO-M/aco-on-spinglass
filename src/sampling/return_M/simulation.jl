@@ -59,13 +59,13 @@ end
 
 # Main simulation function
 function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64)
-    T = convert(Int, round((falpha + 0.2) * 10000000))
+    T = convert(Int, round((falpha + 0.1) * 1000000))
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
     Zm = ones(Float64, N) * 0.5
     exp_val = exp(-1 / tau)
-    M = zeros(Float64, T)
+    M = zeros(Float64, N)
 
 
     # Main simulation loop
@@ -77,7 +77,7 @@ function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Flo
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if alpha < falpha
-            if t % 100000 == 0
+            if t % 10000 == 0
                 alpha += 0.01
             end
         end
@@ -94,7 +94,7 @@ function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64,
     S = zeros(Float64, T)
     Zm = ones(Float64, N) * 0.5
     exp_val = exp(-1 / tau)
-    M = zeros(Float64, T)
+    M = zeros(Float64, N)
     critical_time = calpha * 10000000 + 2000000
 
     # Main simulation loop
