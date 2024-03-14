@@ -59,7 +59,7 @@ end
 
 # Main simulation function
 function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64)
-    T = convert(Int, round((falpha + 0.1) * 100000))
+    T = convert(Int, round((falpha + 0.5) * 1000000))
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
