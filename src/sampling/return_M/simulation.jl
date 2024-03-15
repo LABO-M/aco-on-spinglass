@@ -58,7 +58,7 @@ end
 #end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, h::Float64,  J::Float64)
+function simulate_ants(N::Int, T::Int, ialpha::Float64, falpha::Float64, h::Float64,  J::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -74,15 +74,15 @@ function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, h::Floa
         Sm .+= X .* TP
         Zm = Sm ./ S[t]
         if t == 10000
-            ialpha = malpha
+            ialpha = falpha
         end
     end
-    M = 2 * malpha * (Zm .- 0.5)
+    M = 2 * falpha * (Zm .- 0.5)
 
     return M
 end
 
-function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int, h::Float64, J::Float64)
+function simulate_ants(N::Int, T::Int, ialpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -99,16 +99,16 @@ function simulate_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::In
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if t == 10000
-            ialpha = malpha
+            ialpha = falpha
         end
     end
-    M = 2 * malpha * (Zm .- 0.5)
+    M = 2 * falpha * (Zm .- 0.5)
 
     return M
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, T::Int, ialpha::Float64, falpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
     Z_samples = SharedArray{Float64}(N, samples)
 
     progressBar = Progress(samples * T, 1, "Samples: ")
@@ -116,9 +116,9 @@ function sample_ants(N::Int, T::Int, ialpha::Float64, malpha::Float64, tau::Int,
 
     @sync @distributed for i in 1:samples
         if tau == -1
-            Z_samples[:, i] = simulate_ants(N, T, ialpha, malpha, h, J)
+            Z_samples[:, i] = simulate_ants(N, T, ialpha, falpha, h, J)
         else
-            Z_samples[:, i] = simulate_ants(N, T, ialpha, malpha, tau, h, J)
+            Z_samples[:, i] = simulate_ants(N, T, ialpha, falpha, tau, h, J)
         end
     end
 

@@ -17,12 +17,12 @@ function main(args)
         arg_type = Int
 
         "--ialpha"
-        help = "Exponent parameter alpha"
+        help = "Initial alpha"
         default = 0.0
         arg_type = Float64
 
-        "--malpha"
-        help = "Exponent parameter alpha"
+        "--falpha"
+        help = "Final alpha"
         default = 0.5
         arg_type = Float64
 
@@ -52,7 +52,7 @@ function main(args)
     N = parsed_args["N"]
     T = parsed_args["T"]
     ialpha = parsed_args["ialpha"]
-    malpha = parsed_args["malpha"]
+    falpha = parsed_args["falpha"]
     tau = parsed_args["tau"]
     sample = parsed_args["sample"]
     h = parsed_args["h"]
@@ -61,17 +61,17 @@ function main(args)
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), alpha = $(malpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
+    println("N = $(int_to_SI_prefix(N)), T = $(int_to_SI_prefix(T)), alpha = $(falpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_M = Simulation.sample_ants(N, T, ialpha, malpha, tau, sample, h, J)
+    Z_M = Simulation.sample_ants(N, T, ialpha, falpha, tau, sample, h, J)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_alpha$(malpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_T$(int_to_SI_prefix(T))_alpha$(falpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
     save_Z_to_csv(Z_M, filename_Z)
     end
 
