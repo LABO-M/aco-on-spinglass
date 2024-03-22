@@ -38,12 +38,12 @@ function main(args)
 
         "--h"
         help = "Magnetic field"
-        default = 0.1
+        default = 0.001
         arg_type = Float64
 
         "--J"
         help = "Coupling constant"
-        default = 1.0
+        default = 0.1
         arg_type = Float64
 
     end
