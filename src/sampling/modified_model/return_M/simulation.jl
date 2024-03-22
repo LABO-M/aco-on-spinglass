@@ -89,13 +89,15 @@ function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Flo
 end
 
 function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64, progressBar::ProgressMeter.Progress)
-    T = convert(Int, round((falpha + 1.5) * 1000000))
+    T = convert(Int, round((falpha + 1.1) * 1000000))
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
     Zm = ones(Float64, N) * 0.5
     exp_val = exp(-1 / tau)
     M = zeros(Float64, N)
+    
+    # Calculate the critical time
     critical_time = calpha * 1000000 + 1000000
 
     # Main simulation loop
