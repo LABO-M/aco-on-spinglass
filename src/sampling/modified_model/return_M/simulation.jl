@@ -58,8 +58,7 @@ end
 #end
 
 # Main simulation function
-function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
-    T = convert(Int, round((falpha + 0.1) * 1000000))
+function simulate_ants(N::Int, T::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -77,7 +76,7 @@ function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Flo
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if alpha < falpha
-            if t % 10000 == 0
+            if t % 1000 == 0
                 alpha += 0.01
             end
         end
@@ -88,8 +87,7 @@ function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Flo
     return M
 end
 
-function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64, progressBar::ProgressMeter.Progress)
-    T = convert(Int, round((falpha + 1.1) * 1000000))
+function simulate_ants(N::Int, T::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -97,8 +95,8 @@ function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64,
     exp_val = exp(-1 / tau)
     M = zeros(Float64, N)
     
-    # Calculate the critical time
-    critical_time = calpha * 1000000 + 1000000
+    # The time needed to reach the critical alpha + the repeated time at the critical alpha
+    critical_time = calpha * 100000 + 100000
 
     # Main simulation loop
     for t in 1:T
@@ -109,12 +107,12 @@ function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64,
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if alpha < calpha
-            if t % 10000 == 0
+            if t % 1000 == 0
                 alpha += 0.01
             end
         else
             if t >= critical_time && alpha < falpha
-                if t % 10000 ==0
+                if t % 1000 ==0
                     alpha += 0.01
                 end
             end    
@@ -131,9 +129,9 @@ function sample_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, t
     Z_samples = SharedArray{Float64}(N, samples)
 
     if calpha == 0.0
-        T = convert(Int, round((falpha + 0.1) * 1000000))
+        T = convert(Int, round((falpha + 1.0) * 100000))
     else
-        T = convert(Int, round((falpha + 1.5) * 1000000))
+        T = convert(Int, round((falpha + 2.0) * 100000))
     end
 
     progressBar = Progress(samples * T, 1, "Samples: ")
@@ -141,9 +139,9 @@ function sample_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, t
 
     @sync @distributed for i in 1:samples
         if calpha == 0.0
-            Z_samples[:, i] = simulate_ants(N, alpha, falpha, tau, h, J, progressBar)
+            Z_samples[:, i] = simulate_ants(N, T, alpha, falpha, tau, h, J, progressBar)
         else
-            Z_samples[:, i] = simulate_ants(N, alpha, calpha, falpha, tau, h, J, progressBar)
+            Z_samples[:, i] = simulate_ants(N, T, alpha, calpha, falpha, tau, h, J, progressBar)
         end
         next!(progressBar)
     end

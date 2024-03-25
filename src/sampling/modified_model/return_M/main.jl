@@ -38,7 +38,7 @@ function main(args)
         
         "--sample"
         help = "Sample size."
-        default = 100
+        default = 1000
         arg_type = Int
 
         "--h"
@@ -48,7 +48,7 @@ function main(args)
 
         "--J"
         help = "Coupling constant"
-        default = 1.0
+        default = 0.1
         arg_type = Float64
 
     end
