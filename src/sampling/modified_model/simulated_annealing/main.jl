@@ -8,7 +8,7 @@ function main(args)
     @add_arg_table! s begin
         "--N"
         help = "Number of questions (quizzes)"
-        default = 100
+        default = 10
         arg_type = Int
 
         #"--T"
@@ -18,7 +18,7 @@ function main(args)
 
         "--alpha"
         help = "Exponent parameter alpha"
-        default = 1.0
+        default = 0.99
         arg_type = Float64
 
         #"--calpha"
@@ -33,12 +33,17 @@ function main(args)
 
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 100
+        default = 1
         arg_type = Int
 
         "--ftau"
         help = "Final value of tau"
-        default = 1000
+        default = 100
+        arg_type = Int
+
+        "--tau_step"
+        help = "Step size of tau"
+        default = 1
         arg_type = Int
         
         "--sample"
@@ -66,6 +71,7 @@ function main(args)
     #calpha = parsed_args["calpha"]
     tau = parsed_args["tau"]
     ftau = parsed_args["ftau"]
+    tau_step = parsed_args["tau_step"]
     sample = parsed_args["sample"]
     h = parsed_args["h"]
     J = parsed_args["J"]
@@ -73,17 +79,17 @@ function main(args)
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), tau = $(tau), ftau = $(ftau), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
+    println("N = $(int_to_SI_prefix(N)), tau = $(tau), ftau = $(ftau), tau_step = $(tau_step) sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_M = Simulation.sample_ants(N, alpha, tau, ftau, sample, h, J)
+    Z_M = Simulation.sample_ants(N, alpha, tau, ftau, tau_step, sample, h, J)
 
     # Output Z values to CSV
     dir_Z = "data/Zt"
     if !isdir(dir_Z)
         mkpath(dir_Z)
     end
-    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_tau$(tau)_ftau$(ftau)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
+    filename_Z = joinpath(dir_Z, "N$(int_to_SI_prefix(N))_tau$(tau)_ftau$(ftau)_tau_step$(tau_step)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
     save_Z_to_csv(Z_M, filename_Z)
     end
 

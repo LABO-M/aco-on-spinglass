@@ -58,7 +58,7 @@ end
 #end
 
 # Main simulation function
-function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, ftau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
+function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, ftau::Int, tau_step::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -74,8 +74,8 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, tau::Int, ftau::Int, h::F
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if tau < ftau
-            if t % 10000 == 0
-                tau += 10
+            if t % 100000 == 0
+                tau += tau_step
             end
         end
         next!(progressBar)
@@ -122,7 +122,7 @@ end
 #end
 
 # Function to sample Z values
-function sample_ants(N::Int, alpha::Float64, tau::Int, ftau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, alpha::Float64, tau::Int, ftau::Int, tau_step::Int, samples::Int, h::Float64, J::Float64)
     Z_samples = SharedArray{Float64}(N, samples)
 
     #if calpha == 0.0
@@ -131,22 +131,22 @@ function sample_ants(N::Int, alpha::Float64, tau::Int, ftau::Int, samples::Int, 
     #    T = convert(Int, round((falpha + 2.0) * 100000))
     #end
 
-    T = convert(Int, round(((ftau/10) * 10000)))
+    T = convert(Int, round((div(ftau,tau_step)+1) * 100000))
 
     progressBar = Progress(samples * T, 1, "Samples: ")
     ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
-        Z_samples[:, i] = simulate_ants(N, T, alpha, tau, ftau, h, J, progressBar)
+        Z_samples[:, i] = simulate_ants(N, T, alpha, tau, ftau, tau_step, h, J, progressBar)
         next!(progressBar)
     end
 
+    #Nで平均を取る
+    Z_M = mean(Z_samples, dims=1)
+
     println("Finished simulation")
 
-    #Create M vector
-    Z_M = vcat(Z_samples...)
-
-    return Z_M
+    return vec(Z_M)
 
 end
 
