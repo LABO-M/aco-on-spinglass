@@ -38,27 +38,9 @@ function culculate_Pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)
     return Pheromone
 end
 
-## Initialize the simulation up to the initial time t0.
-#function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, C::Float64)
-#    for t in 1:t0
-#        X .= rand(0:1, N)
-#        TP = culculate_TP(N, X, h, J, C)
-#        S[t] = (t == 1 ? TP : S[t-1] + TP)
-#        Sm .+= X .* TP
-#    end
-#end
-
-#function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, exp_val::Float64, C::Float64)
-#    for t in 1:t0
-#        X .= rand(0:1, N)
-#        TP = culculate_TP(N, X, h, J, C)
-#        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
-#        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
-#    end
-#end
-
 # Main simulation function
-function simulate_ants(N::Int, T::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
+# Remain for loop to modify easily
+function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -75,47 +57,8 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, falpha::Float64, tau::Int
         S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
-        if alpha < falpha
-            if t % 1000 == 0
-                alpha += 0.01
-            end
-        end
-        next!(progressBar)
-    end
-    M = 2 * alpha * (Zm .- 0.5)
-
-    return M
-end
-
-function simulate_ants(N::Int, T::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64, progressBar::ProgressMeter.Progress)
-    X = zeros(Int, N)
-    Sm = zeros(Float64, N)
-    S = zeros(Float64, T)
-    Zm = ones(Float64, N) * 0.5
-    exp_val = exp(-1 / tau)
-    M = zeros(Float64, N)
-    
-    # The time needed to reach the critical alpha + the repeated time at the critical alpha
-    critical_time = calpha * 100000 + 100000
-
-    # Main simulation loop
-    for t in 1:T
-        prob = decision_function.(Zm, alpha)
-        X .= rand(Float64, N) .< prob
-        TP = culculate_Pheromone(N, X, h, J)
-        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
-        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
-        Zm = Sm ./ S[t]
-        if alpha < calpha
-            if t % 1000 == 0
-                alpha += 0.01
-            end
-        else
-            if t >= critical_time && alpha < falpha
-                if t % 1000 ==0
-                    alpha += 0.01
-                end
-            end    
+        if alpha < end_alpha
+            alpha += 0.000001
         end
         next!(progressBar)
     end
@@ -125,24 +68,16 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, calpha::Float64, falpha::
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
     Z_samples = SharedArray{Float64}(N, samples)
 
-    if calpha == 0.0
-        T = convert(Int, round((falpha + 1.0) * 100000))
-    else
-        T = convert(Int, round((falpha + 2.0) * 100000))
-    end
+    T = convert(Int, round((end_alpha + 0.1) * 1000000))
 
     progressBar = Progress(samples * T, 1, "Samples: ")
     ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
-        if calpha == 0.0
-            Z_samples[:, i] = simulate_ants(N, T, alpha, falpha, tau, h, J, progressBar)
-        else
-            Z_samples[:, i] = simulate_ants(N, T, alpha, calpha, falpha, tau, h, J, progressBar)
-        end
+        Z_samples[:, i] = simulate_ants(N, T, alpha, end_alpha, tau, h, J, progressBar)
         next!(progressBar)
     end
 
