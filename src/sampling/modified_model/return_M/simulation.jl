@@ -17,11 +17,11 @@ function discount_factor(t::Vector{Int})::Vector{Float64}
     return t
 end
 
-#Calculate the maximum energy
-function culculate_min_energy(J::Float64, h::Float64)
-    TP = -h + -J
-    return TP
-end
+##Calculate the maximum energy
+#function culculate_min_energy(J::Float64, h::Float64)
+#    TP = -h + -J
+#    return TP
+#end
 
 # Calculate the total pheromone value
 function culculate_Pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)
@@ -40,7 +40,7 @@ end
 
 # Main simulation function
 # Remain for loop to modify easily
-function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
+function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -58,7 +58,7 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, tau::
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
         if alpha < end_alpha
-            alpha += 0.000001
+            alpha += alpha_increment
         end
         next!(progressBar)
     end
@@ -68,16 +68,16 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, tau::
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
     Z_samples = SharedArray{Float64}(N, samples)
 
-    T = convert(Int, round((end_alpha + 0.1) * 1000000))
+    T = convert(Int, round((end_alpha + 0.1) / alpha_increment))
 
     progressBar = Progress(samples * T, 1, "Samples: ")
     ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
-        Z_samples[:, i] = simulate_ants(N, T, alpha, end_alpha, tau, h, J, progressBar)
+        Z_samples[:, i] = simulate_ants(N, T, alpha, end_alpha, alpha_increment, tau, h, J, progressBar)
         next!(progressBar)
     end
 

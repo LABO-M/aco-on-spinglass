@@ -21,6 +21,11 @@ function main(args)
         default = 0.99
         arg_type = Float64
 
+        "--alpha_increment"
+        help = "Increment of alpha"
+        default = 1.0e-6
+        arg_type = Float64
+
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
         default = 100
@@ -47,6 +52,7 @@ function main(args)
     N = parsed_args["N"]
     alpha = parsed_args["alpha"]
     end_alpha = parsed_args["end_alpha"]
+    alpha_increment = parsed_args["alpha_increment"]
     tau = parsed_args["tau"]
     sample = parsed_args["sample"]
     h = parsed_args["h"]
@@ -58,10 +64,13 @@ function main(args)
     println("N = $(int_to_SI_prefix(N)), alpha = $(end_alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_M = Simulation.sample_ants(N, alpha, end_alpha, tau, sample, h, J)
+    Z_M = Simulation.sample_ants(N, alpha, end_alpha, alpha_increment, tau, sample, h, J)
 
     # Output Z values to CSV
-    dir_M = "../data/tau$(tau_str)_h$(h)_J$(J)"
+
+    alpha_increment_str = string(alpha_increment)
+
+    dir_M = "../data/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
     if !isdir(dir_M)
         mkpath(dir_M)
     end
