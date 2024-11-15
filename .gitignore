@@ -6,3 +6,5 @@ __pycache__/
 
 # But do not ignore .gitkeep files
 !data/.gitkeep
+
+myvenv
