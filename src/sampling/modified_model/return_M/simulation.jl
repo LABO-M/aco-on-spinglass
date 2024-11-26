@@ -68,7 +68,7 @@ function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, alpha
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, samples::Int, h::Float64, J::Float64, seed::Int)
     Z_samples = SharedArray{Float64}(N, samples)
 
     T = convert(Int, round((end_alpha + 0.1) / alpha_increment))
@@ -77,6 +77,7 @@ function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, alpha_increment
     ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
+        Random.seed!(seed + i - 1) #各プロセスでシードを設定
         Z_samples[:, i] = simulate_ants(N, T, alpha, end_alpha, alpha_increment, tau, h, J, progressBar)
         next!(progressBar)
     end

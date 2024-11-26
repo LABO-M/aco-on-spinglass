@@ -6,6 +6,11 @@ function main(args)
     s = ArgParseSettings()
 
     @add_arg_table! s begin
+        "--seed"
+        help = "Random seed value"
+        default = 1625
+        arg_type = Int
+
         "--N"
         help = "Number of questions (quizzes)"
         default = 100
@@ -28,7 +33,7 @@ function main(args)
 
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 100
+        default = 1000
         arg_type = Int
         
         "--sample"
@@ -49,6 +54,7 @@ function main(args)
     end
 
     parsed_args = parse_args(args, s)
+    seed = parsed_args["seed"]
     N = parsed_args["N"]
     alpha = parsed_args["alpha"]
     end_alpha = parsed_args["end_alpha"]
@@ -61,20 +67,20 @@ function main(args)
     # Log the simulation parameters
     tau_str = (tau == -1) ? "inf" : int_to_SI_prefix(tau)
     println("Running simulation with the following parameters:")
-    println("N = $(int_to_SI_prefix(N)), alpha = $(end_alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
+    println("seed = $(seed), N = $(int_to_SI_prefix(N)), alpha = $(end_alpha), tau = $(tau_str), sample = $(int_to_SI_prefix(sample)), h = $(h), J = $(J)")
 
     # Run the simulation
-    Z_M = Simulation.sample_ants(N, alpha, end_alpha, alpha_increment, tau, sample, h, J)
+    Z_M = Simulation.sample_ants(N, alpha, end_alpha, alpha_increment, tau, sample, h, J, seed)
 
     # Output Z values to CSV
 
     alpha_increment_str = string(alpha_increment)
 
-    dir_M = "../../data/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
+    dir_M = "/home/mori-lab/shimizu/ACO-on-SpinGlass/src/sampling/modified_model/return_M/data/seed$(seed)/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
     if !isdir(dir_M)
         mkpath(dir_M)
     end
-    filename_M = joinpath(dir_M, "N$(int_to_SI_prefix(N))_alpha$(end_alpha)_tau$(tau_str)_sample$(int_to_SI_prefix(sample))_h$(h)_J$(J).csv")
+    filename_M = joinpath(dir_M, "N$(int_to_SI_prefix(N))_alpha$(end_alpha)_sample$(int_to_SI_prefix(sample)).csv")
     save_Z_to_csv(Z_M, filename_M)
     end
 
