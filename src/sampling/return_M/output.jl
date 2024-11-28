@@ -16,8 +16,8 @@ end
 # Function to save Z values to a CSV file with optional downsampling
 function save_Z_to_csv(Z_M::Vector{Float64}, filename::String, interval::Int=1000)
     t_values = collect(1:length(Z_M))
-    Z_downsampled = Z_M[t_values]
-    df = DataFrame(t=t_values, Z=Z_downsampled)
+    M_downsampled = Z_M[t_values]
+    df = DataFrame(t=t_values, M=M_downsampled)
     CSV.write(filename, df)
-    println("Saved Z values to $filename")
+    println("Saved M values to $filename")
 end

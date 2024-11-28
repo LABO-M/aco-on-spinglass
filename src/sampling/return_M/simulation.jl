@@ -17,20 +17,20 @@ function discount_factor(t::Vector{Int})::Vector{Float64}
     return t
 end
 
-#Calculate the maximum energy
-function culculate_min_energy(J::Float64, h::Float64)
-    TP = -h + -J
-    return TP
-end
+##Calculate the maximum energy
+#function culculate_min_energy(J::Float64, h::Float64)
+#    TP = -h + -J
+#    return TP
+#end
 
 # Calculate the total pheromone value
 function culculate_Pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)
     X_spin = 2*X .- 1
     TP = 0
-    TP += sum(X_spin .* -h) * (1/N)
+    TP += sum(X_spin .* -h)
     for i in 1:N, j in 1:N
         if i != j
-            TP += -J * X_spin[i] * X_spin[j] * (1/(N*(N-1)))
+            TP += -J * X_spin[i] * X_spin[j] * (1/(N-1))
         end
     end
     Pheromone = exp(-TP)
@@ -38,28 +38,9 @@ function culculate_Pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)
     return Pheromone
 end
 
-## Initialize the simulation up to the initial time t0.
-#function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, C::Float64)
-#    for t in 1:t0
-#        X .= rand(0:1, N)
-#        TP = culculate_TP(N, X, h, J, C)
-#        S[t] = (t == 1 ? TP : S[t-1] + TP)
-#        Sm .+= X .* TP
-#    end
-#end
-
-#function initialize_simulation(N::Int, X::Vector{Int}, h::Float64, J::Float64, S::Vector{Float64}, Sm::Vector{Float64}, t0::Int, exp_val::Float64, C::Float64)
-#    for t in 1:t0
-#        X .= rand(0:1, N)
-#        TP = culculate_TP(N, X, h, J, C)
-#        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
-#        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
-#    end
-#end
-
 # Main simulation function
-function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Float64, J::Float64)
-    T = convert(Int, round((falpha + 0.5) * 1000000))
+# Remain for loop to modify easily
+function simulate_ants(N::Int, T::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, h::Float64, J::Float64, progressBar::ProgressMeter.Progress)
     X = zeros(Int, N)
     Sm = zeros(Float64, N)
     S = zeros(Float64, T)
@@ -76,46 +57,10 @@ function simulate_ants(N::Int, alpha::Float64, falpha::Float64, tau::Int, h::Flo
         S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
         Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
         Zm = Sm ./ S[t]
-        if alpha < falpha
-            if t % 10000 == 0
-                alpha += 0.01
-            end
+        if alpha < end_alpha
+            alpha += alpha_increment
         end
-    end
-    M = 2 * alpha * (Zm .- 0.5)
-
-    return M
-end
-
-function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, h::Float64,  J::Float64)
-    T = convert(Int, round((falpha + 0.3) * 10000000))
-    X = zeros(Int, N)
-    Sm = zeros(Float64, N)
-    S = zeros(Float64, T)
-    Zm = ones(Float64, N) * 0.5
-    exp_val = exp(-1 / tau)
-    M = zeros(Float64, N)
-    critical_time = calpha * 10000000 + 2000000
-
-    # Main simulation loop
-    for t in 1:T
-        prob = decision_function.(Zm, alpha)
-        X .= rand(Float64, N) .< prob
-        TP = culculate_Pheromone(N, X, h, J)
-        S[t] = (t == 1 ? TP : S[t-1] * exp_val + TP)
-        Sm .= (t == 1 ? X .* TP : Sm * exp_val .+ X .* TP)
-        Zm = Sm ./ S[t]
-        if alpha < calpha
-            if t % 100000 == 0
-                alpha += 0.01
-            end
-        else
-            if t >= critical_time && alpha < falpha
-                if t % 100000 ==0
-                    alpha += 0.01
-                end
-            end    
-        end
+        next!(progressBar)
     end
     M = 2 * alpha * (Zm .- 0.5)
 
@@ -123,18 +68,18 @@ function simulate_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64,
 end
 
 # Function to sample Z values
-function sample_ants(N::Int, alpha::Float64, calpha::Float64, falpha::Float64, tau::Int, samples::Int, h::Float64, J::Float64)
+function sample_ants(N::Int, alpha::Float64, end_alpha::Float64, alpha_increment::Float64, tau::Int, samples::Int, h::Float64, J::Float64, seed::Int)
     Z_samples = SharedArray{Float64}(N, samples)
 
-    #progressBar = Progress(samples * T, 1, "Samples: ")
-    #ProgressMeter.update!(progressBar, 0)
+    T = convert(Int, round((end_alpha + 0.1) / alpha_increment))
+
+    progressBar = Progress(samples * T, 1, "Samples: ")
+    ProgressMeter.update!(progressBar, 0)
 
     @sync @distributed for i in 1:samples
-        if calpha == 0.0
-            Z_samples[:, i] = simulate_ants(N, alpha, falpha, tau, h, J)
-        else
-            Z_samples[:, i] = simulate_ants(N, alpha, calpha, falpha, tau, h, J)
-        end
+        Random.seed!(seed + i - 1) #各プロセスでシードを設定
+        Z_samples[:, i] = simulate_ants(N, T, alpha, end_alpha, alpha_increment, tau, h, J, progressBar)
+        next!(progressBar)
     end
 
     println("Finished simulation")
