@@ -76,7 +76,7 @@ function main(args)
 
     alpha_increment_str = string(alpha_increment)
 
-    dir_M = "/home/mori-lab/shimizu/ACO-on-SpinGlass/src/sampling/modified_model/return_M/data/seed$(seed)/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
+    dir_M = "/home/mori-lab/shimizu/ACO-on-SpinGlass/src/sampling/return_M/data/seed$(seed)/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
     if !isdir(dir_M)
         mkpath(dir_M)
     end
