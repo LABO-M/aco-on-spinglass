@@ -29,6 +29,7 @@ def update(m, h, J, tau, alpha):
 def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
     best_energy = 0
     alpha_cnt = 0
+    energy_series = []
     for iteration in range(max_iter):
         grad = update(m, h, J, tau, alpha)
         m = m - lr * grad  # 勾配降下ステップ
@@ -43,7 +44,11 @@ def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
         ## alpha が 0.99 に達した場合、終了
         #if alpha >= 0.999:
         #    break
-    return energy(m, h, J), best_energy, alpha_cnt
+        energy_series.append(energy(m, h, J).cpu().item())
+    #print(type(energy(m, h, J).cpu().item()))
+    #print(len(energy_series))
+
+    return energy_series, best_energy, alpha_cnt
 
 # シード値の設定
 def initialize_random_parameters(n, seed):
