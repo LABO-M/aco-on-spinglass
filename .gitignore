@@ -3,6 +3,7 @@ data/*
 notebooks/data/*
 .vscode/
 __pycache__/
+src/sampling/grad_method/data/*
 
 # But do not ignore .gitkeep files
 !data/.gitkeep
