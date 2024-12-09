@@ -28,7 +28,7 @@ def update(m, h, J, tau, alpha):
 # 勾配降下法 (改良版)
 def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
     best_energy = 0
-    alpha_cnt = 0
+    alpha_increment_list = []
     energy_series = []
     for iteration in range(max_iter):
         grad = update(m, h, J, tau, alpha)
@@ -39,8 +39,9 @@ def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
         # 停滞のチェック（勾配が小さくなる場合）
         if torch.max(abs(grad)) < tol:
             alpha = min(alpha + alpha_inc, 0.9999)  # alpha を増加
-            alpha_cnt += 1
-
+            alpha_increment_list.append(1)
+        else:
+            alpha_increment_list.append(0)
         ## alpha が 0.99 に達した場合、終了
         #if alpha >= 0.999:
         #    break
@@ -48,7 +49,7 @@ def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
     #print(type(energy(m, h, J).cpu().item()))
     #print(len(energy_series))
 
-    return energy_series, best_energy, alpha_cnt
+    return energy_series, best_energy, alpha_increment_list
 
 # シード値の設定
 def initialize_random_parameters(n, seed):
