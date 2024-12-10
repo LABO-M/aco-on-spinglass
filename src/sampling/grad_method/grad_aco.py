@@ -21,7 +21,7 @@ def f(m, h, J, tau, alpha):
 # 勾配計算関数 (ベクトル化)
 # Not devided by N-1
 def update(m, h, J, tau, alpha):
-    interaction_grad = -alpha * (torch.sum(J * m, dim=1) - torch.diagonal(J) * m) 
+    interaction_grad = (-2 * alpha * (torch.sum(J * m, dim=1) - torch.diagonal(J) * m)) / (len(m) - 1) 
     dif = interaction_grad + (1 - alpha) * m / (1 - m**2) - alpha * h
     return dif
 
@@ -55,4 +55,5 @@ def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
 def initialize_random_parameters(n, seed):
     torch.manual_seed(seed)
     J = torch.normal(mean=0.0, std=1.0, size=(n, n))
+    J = torch.tril(J) + torch.tril(J).T
     return J
