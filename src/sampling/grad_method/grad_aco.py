@@ -1,8 +1,4 @@
 import torch
-import numpy as np
-import output
-import importlib
-importlib.reload(output)
 
 # mの正負に応じてイジングモデルのエネルギーを計算
 # Not devided by N-1
