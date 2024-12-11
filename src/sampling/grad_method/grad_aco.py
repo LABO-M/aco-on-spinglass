@@ -1,36 +1,38 @@
 import torch
 
+# 変数の設定
+def initialize_random_parameters(n, seed, device):
+    torch.manual_seed(seed)
+    m = torch.zeros(n, device=device)
+    h = torch.ones(n, device=device) * 0.001
+    J = torch.normal(mean=0.0, std=1.0, size=(n, n), device=device)
+    J = torch.tril(J, diagonal=-1) + torch.tril(J, diagonal=-1).T
+    initial_alpha = torch.tensor(0.0, device=device)
+    return m, h, J, initial_alpha
+
 # mの正負に応じてイジングモデルのエネルギーを計算
-# Not devided by N-1
 def energy(m, h, J):
     m = 2 * (m > 0.0) - 1
-    return -torch.sum(h * m) - (torch.sum(J * torch.outer(m, m)) - torch.sum(torch.diagonal(J * torch.outer(m, m))))
+    return -torch.sum(h * m) - (torch.sum(J * torch.outer(m, m)) / (len(m) - 1))
 
-# エネルギー計算関数 (ベクトル化)
-# Not devided by N-1
-def f(m, h, J, tau, alpha):
+# 自由エネルギー計算関数 (ベクトル化)
+def free_energy(m, h, J, alpha):
     AS = -(1 - alpha) * torch.sum(torch.log(1 - m**2))
-    interaction = (torch.sum(J * torch.outer(m, m)) - torch.sum(torch.diagonal(J * torch.outer(m, m)))) 
-    ising = -alpha * (torch.sum(h * m) + interaction)
-    return AS + ising
+    return AS + alpha * energy(m, h, J)
 
 # 勾配計算関数 (ベクトル化)
-# Not devided by N-1
-def update(m, h, J, tau, alpha):
-    interaction_grad = (-2 * alpha * (torch.sum(J * m, dim=1) - torch.diagonal(J) * m)) / (len(m) - 1) 
+def update(m, h, J, alpha):
+    interaction_grad = -2 * alpha * torch.sum(J * m, dim=1) / (len(m) - 1) 
     dif = interaction_grad + (1 - alpha) * m / (1 - m**2) - alpha * h
     return dif
 
-# 勾配降下法 (改良版)
-def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
-    best_energy = 0
+# 勾配降下法（α-annealing）
+def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
     alpha_increment_list = []
     energy_series = []
-    for iteration in range(max_iter):
-        grad = update(m, h, J, tau, alpha)
+    for iteration in range(iter):
+        grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
-        if best_energy > energy(m, h, J):
-            best_energy = energy(m, h, J)
 
         # 停滞のチェック（勾配が小さくなる場合）
         if torch.max(abs(grad)) < tol:
@@ -38,18 +40,19 @@ def gradient_descent(m, h, J, tau, alpha, alpha_inc, max_iter, lr, tol):
             alpha_increment_list.append(1)
         else:
             alpha_increment_list.append(0)
-        ## alpha が 0.99 に達した場合、終了
-        #if alpha >= 0.999:
-        #    break
         energy_series.append(energy(m, h, J).cpu().item())
-    #print(type(energy(m, h, J).cpu().item()))
-    #print(len(energy_series))
 
-    return energy_series, best_energy, alpha_increment_list
+    return energy_series, alpha_increment_list
 
-# シード値の設定
-def initialize_random_parameters(n, seed):
-    torch.manual_seed(seed)
-    J = torch.normal(mean=0.0, std=1.0, size=(n, n))
-    J = torch.tril(J) + torch.tril(J).T
-    return J
+# 勾配降下法（fixed α）
+def gradient_descent(m, h, J, alpha, iter, lr, tol):
+    energy_series = []
+    for iteration in range(iter):
+        grad = update(m, h, J, alpha)
+        m = m - lr * grad  # 勾配降下ステップ
+        energy_series.append(energy(m, h, J).cpu().item())
+
+        # 停滞のチェック（勾配が小さくなる場合）
+        if torch.max(abs(grad)) < tol:
+            break
+    return energy_series
