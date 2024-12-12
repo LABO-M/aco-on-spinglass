@@ -5,6 +5,7 @@ notebooks/data/*
 __pycache__/
 src/sampling/grad_method/data/*
 src/sampling/simulated_annealing/data/*
+src/sampling/alpha_annealing/data/*
 src/visuals
 
 # But do not ignore .gitkeep files
