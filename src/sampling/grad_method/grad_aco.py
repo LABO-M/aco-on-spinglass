@@ -40,7 +40,7 @@ def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
             alpha_increment_list.append(1)
         else:
             alpha_increment_list.append(0)
-        energy_series.append(energy(m, h, J).cpu().item())
+        energy_series.append(energy(m, h, J).item())
 
     return energy_series, alpha_increment_list
 
@@ -50,7 +50,7 @@ def gradient_descent(m, h, J, alpha, iter, lr, tol):
     for iteration in range(iter):
         grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
-        energy_series.append(energy(m, h, J).cpu().item())
+        energy_series.append(energy(m, h, J).item())
 
         # 停滞のチェック（勾配が小さくなる場合）
         if torch.max(abs(grad)) < tol:
