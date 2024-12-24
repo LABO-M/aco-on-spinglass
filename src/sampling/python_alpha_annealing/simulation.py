@@ -1,6 +1,6 @@
 import torch
 
-def initialize_spinglass(n, seed, iter, device):
+def initialize_spinglass(n, seed, iter, start_alpha, device):
     torch.manual_seed(seed)
     spins = torch.tensor([1 if torch.rand(1).item() < 0.5 else -1 for _ in range(n)], device=device)
     J = torch.normal(mean=0.0, std=1.0, size=(n, n), device=device)
@@ -8,20 +8,20 @@ def initialize_spinglass(n, seed, iter, device):
     h = torch.ones(n, device=device) * 0.001 # 外部磁場
     st = torch.ones(n, device=device) * torch.exp(calculate_energy(spins, h, J))
     st1 = st * ((spins + 1) / 2)
-    alpha = torch.tensor(0.0, device=device)
-    alpha_inc = torch.tensor(1/iter, device=device)
+    alpha_inc = torch.tensor((1 - start_alpha)/iter, device=device)
+    alpha = torch.tensor(start_alpha, device=device)
 
     return spins, h, J, st, st1, alpha, alpha_inc
 
-def initialize_homogeneous(n, seed, iter, device):
+def initialize_homogeneous(n, seed, iter, start_alpha, device):
     torch.manual_seed(seed)
     spins = torch.tensor([1 if torch.rand(1).item() < 0.5 else -1 for _ in range(n)], device=device)
     h = torch.ones(n, device=device) * 0.001 # 外部磁場
     J = (torch.ones(size=(n, n), device=device) - torch.eye(n, device=device)) * 0.1 # 交互作用
     st = torch.exp(calculate_energy(spins, h, J))
     st1 = st * ((spins + 1) / 2)
-    alpha = torch.tensor(0.0, device=device)
-    alpha_inc = torch.tensor(1/iter, device=device)
+    alpha_inc = torch.tensor((1 - start_alpha)/iter, device=device)
+    alpha = torch.tensor(start_alpha, device=device)
 
     return spins, h, J, st, st1, alpha, alpha_inc
 
