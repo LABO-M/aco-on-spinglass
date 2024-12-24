@@ -8,14 +8,14 @@ def ensure_dir_exists(file_path):
         os.makedirs(dir_name)
 
 def list_to_csv(name, data, seed, iter):
-    file_path = f'/home/mori-lab/shimizu/aco/aco-on-spinglass/src/sampling/alpha_annealing/data/seed{seed}/iter{iter:.0e}/{name}.csv'
+    file_path = f'/home/mori-lab/shimizu/aco/aco-on-spinglass/src/sampling/python_alpha_annealing/data/seed{seed}/iter{iter:.0e}/{name}.csv'
     ensure_dir_exists(file_path)  # ディレクトリの存在確認
     with open(file_path, 'w', newline='') as f:
         for _ in data:
             print(_, sep=',', file=f)
 
 def matrix_to_csv(name, data, seed, iter):
-    file_path = f'/home/mori-lab/shimizu/aco/aco-on-spinglass/src/sampling/alpha_annealing/data/seed{seed}/iter{iter:.0e}/{name}.csv'
+    file_path = f'/home/mori-lab/shimizu/aco/aco-on-spinglass/src/sampling/python_alpha_annealing/data/seed{seed}/iter{iter:.0e}/{name}.csv'
     ensure_dir_exists(file_path)  # ディレクトリの存在確認
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
