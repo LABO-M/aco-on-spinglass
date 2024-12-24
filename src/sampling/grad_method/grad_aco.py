@@ -15,11 +15,6 @@ def energy(m, h, J):
     m = 2 * (m > 0.0) - 1
     return -torch.sum(h * m) - (torch.sum(J * torch.outer(m, m)) / (len(m) - 1))
 
-# 自由エネルギー計算関数 (ベクトル化)
-def free_energy(m, h, J, alpha):
-    AS = -(1 - alpha) * torch.sum(torch.log(1 - m**2))
-    return AS + alpha * energy(m, h, J)
-
 # 勾配計算関数 (ベクトル化)
 def update(m, h, J, alpha):
     interaction_grad = -2 * alpha * torch.sum(J * m, dim=1) / (len(m) - 1) 
@@ -30,6 +25,7 @@ def update(m, h, J, alpha):
 def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
     alpha_increment_list = []
     energy_series = []
+    grad_series = []
     for iteration in range(iter):
         grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
@@ -41,18 +37,21 @@ def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
         else:
             alpha_increment_list.append(0)
         energy_series.append(energy(m, h, J).item())
+        #grad_series.append(grad.tolist())
 
-    return energy_series, alpha_increment_list
+    return energy_series, alpha_increment_list, grad_series
 
 # 勾配降下法（fixed α）
 def gradient_descent(m, h, J, alpha, iter, lr, tol):
     energy_series = []
+    grad_series = []
     for iteration in range(iter):
         grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
         energy_series.append(energy(m, h, J).item())
+        grad_series.append(grad.tolist())
 
         # 停滞のチェック（勾配が小さくなる場合）
         if torch.max(abs(grad)) < tol:
             break
-    return energy_series
+    return energy_series, grad_series
