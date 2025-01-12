@@ -26,6 +26,7 @@ def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
     alpha_increment_list = []
     energy_series = []
     grad_series = []
+    m_series = []
     for iteration in range(iter):
         grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
@@ -40,13 +41,15 @@ def gradient_descent_annealing(m, h, J, alpha, alpha_inc, iter, lr, tol):
         if iteration % int(iter / 1e6) == 0:
             energy_series.append(energy(m, h, J).item())
             grad_series.append(grad.tolist())
+            m_series.append(m.tolist())
 
-    return energy_series, alpha_increment_list, grad_series
+    return energy_series, alpha_increment_list, grad_series, m_series
 
 # 勾配降下法（fixed α）
 def gradient_descent(m, h, J, alpha, iter, lr, tol):
     energy_series = []
     grad_series = []
+    m_series = []
     for iteration in range(iter):
         grad = update(m, h, J, alpha)
         m = m - lr * grad  # 勾配降下ステップ
@@ -54,8 +57,9 @@ def gradient_descent(m, h, J, alpha, iter, lr, tol):
         if iteration % int(iter / 1e6) == 0:
             energy_series.append(energy(m, h, J).item())
             grad_series.append(grad.tolist())
+            m_series.append(m.tolist())
 
         # 停滞のチェック（勾配が小さくなる場合）
         if torch.max(abs(grad)) < tol:
             break
-    return energy_series, grad_series
+    return energy_series, grad_series, m_series
