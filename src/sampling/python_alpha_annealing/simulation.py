@@ -7,7 +7,7 @@ def initialize_spinglass(n, seed, iter, start_alpha, device):
     J = torch.tril(J, diagonal=-1) + torch.tril(J, diagonal=-1).T  # 下三角のみ
     h = torch.ones(n, device=device) * 0.001 # 外部磁場
     st1 = torch.exp(calculate_energy(spins, h, J)) * ((spins + 1) / 2)
-    st0 = torch.exp(calculate_energy(spins, h, J)) * ((- spins + 1) / 2)
+    st0 = torch.exp(calculate_energy(spins, h, J)) * ((-spins + 1) / 2)
     alpha = torch.tensor(start_alpha, device=device)
     alpha_inc = torch.tensor((1 - start_alpha)/iter, device=device)
 
@@ -33,6 +33,10 @@ def calculate_external_effect(determined_spins, J):
     return result
 
 def decision_probabilities(st1, st0, index, alpha, beta, external_effect):
+    z = st1[index] / (st1[index] + st0[index])
+    return (z ** alpha * torch.exp(-beta * external_effect)) / (z ** alpha * torch.exp(-beta * external_effect) + (1-z) ** alpha * torch.exp(beta * external_effect))
+
+def decision_probabilities1(st1, st0, index, alpha, beta, external_effect):
     return (1 - alpha) * 0.5 + alpha * (st1[index] * torch.exp(-beta * external_effect) / (st1[index] * torch.exp(-beta * external_effect) + st0[index] * torch.exp(beta * external_effect)))
 
 def calculate_energy(spins, h, J):
