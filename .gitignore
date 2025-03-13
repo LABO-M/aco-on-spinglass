@@ -6,6 +6,7 @@ src/sampling/grad_method/data/*
 src/sampling/simulated_annealing/data/*
 src/sampling/python_alpha_annealing/data/*
 data
+visuals
 
 # But do not ignore .gitkeep files
 !data/.gitkeep
