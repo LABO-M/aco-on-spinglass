@@ -15,7 +15,7 @@ def list_to_csv(name, data, seed, iter):
             print(_, sep=',', file=f)
 
 def matrix_to_csv(name, data, seed, iter):
-    file_path = f'.../../../data/spinglass/beta/annealing/seed{seed}/iter{iter:.0e}/{name}.csv'
+    file_path = f'../../../data/spinglass/beta/annealing/seed{seed}/iter{iter:.0e}/{name}.csv'
     ensure_dir_exists(file_path)  # ディレクトリの存在確認
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
