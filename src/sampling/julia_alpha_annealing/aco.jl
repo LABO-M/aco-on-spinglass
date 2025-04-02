@@ -10,11 +10,11 @@ using FilePathsBase
 n = 100
 tau = 100.0
 evaporation_rate = exp(-1 / tau)
-beta = 0.01
+beta = 1
 start_alpha = 0.0
 start_seed = 42
-iter = 100_000
-num_samples = 2  # サンプル数
+iter = 100000
+num_samples = 100  # サンプル数
 
 # --- 共通関数群 ---
 function initialize_spinglass(n, seed, iter, start_alpha)
