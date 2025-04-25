@@ -8,10 +8,10 @@ using Printf
 using FilePathsBase
 
 # --- パラメータの設定 ---
-n = 100
+n = 2^5
 tau = 100.0
 evaporation_rate = exp(-1 / tau)
-beta = 0.01
+beta = 3
 start_alpha = 0.0
 start_seed = 42
 iter = 100000
@@ -97,10 +97,12 @@ dir_path = "/home/mori-lab/shimizu/aco/data/ising/annealing/seed$(start_seed)/it
 mkpath(dir_path)
 
 # --- ファイル名と保存 ---
-filename_m_mean = @sprintf("beta%.1e_sample%.1e_tau%.1e_m_mean.csv", beta, num_samples, tau)
+exp_n = Int(log2(n))
+
+filename_m_mean = @sprintf("beta%.1e_sample%.1e_n2^%d_tau%.1e_m_mean.csv", beta, num_samples, exp_n, tau)
 full_path_m_mean = joinpath(dir_path, filename_m_mean)
 CSV.write(full_path_m_mean, df_m_mean)
-filename_m_var = @sprintf("beta%.1e_sample%.1e_tau%.1e_m_var.csv", beta, num_samples, tau)
+filename_m_var = @sprintf("beta%.1e_sample%.1e_n2^%d_tau%.1e_m_var.csv", beta, num_samples, exp_n, tau)
 full_path_m_var = joinpath(dir_path, filename_m_var)
 CSV.write(full_path_m_var, df_m_var)
 
