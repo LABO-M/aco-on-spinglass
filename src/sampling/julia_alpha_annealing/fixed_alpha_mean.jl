@@ -19,7 +19,7 @@ function decision_probabilities(beta, external_effect)
 end
 
 function sampling(power, beta, start_seed, sample, magnetic, interaction, dir_switch)
-    spins_mean_series = []
+    partial = [Float64[] for _ in 1:nthreads()]
 
     @threads for sample_id in 1:sample
         Random.seed!(start_seed + sample_id)
@@ -39,9 +39,14 @@ function sampling(power, beta, start_seed, sample, magnetic, interaction, dir_sw
             new_spin = 2 * (rand() < prob) - 1
             push!(determined_spins, new_spin)
         end
-        push!(spins_mean_series, mean(determined_spins))
+        # スレッドローカルの配列に格納
+        tid = threadid()
+        push!(partial[tid], mean(determined_spins))
 
     end
+
+    # すべてのスレッドの結果をまとめる
+    spins_mean_series = reduce(vcat, partial)
 
     # --- 出力先ディレクトリ作成 ---
     dir_path = "/home/mori-lab/shimizu/aco/data/ising/zero_alpha/seed$(start_seed)/$(dir_switch)"
@@ -50,7 +55,9 @@ function sampling(power, beta, start_seed, sample, magnetic, interaction, dir_sw
     # --- ファイル名と保存 ---
     filename_spins_mean = @sprintf("beta%.1e_sample%.1e_n2^%d_spins_mean.csv", beta, sample, power)
     full_path_spins_mean = joinpath(dir_path, filename_spins_mean)
-    CSV.write(full_path_spins_mean, spins_mean_series)
+    vec = Vector(spins_mean_series)
+    df = DataFrame(sample = vec)
+    CSV.write(full_path_spins_mean, df)
 
     return filename_spins_mean
 end

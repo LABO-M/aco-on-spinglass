@@ -64,8 +64,8 @@ function main(args)
     interaction = parsed_args["interaction"]
     dir_switch = magnetic == 0.0 ? "symmetric" : "asymmetric"
 
-    filename_m_mean, filename_m_var = annealing_mean.sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magnetic, interaction, dir_switch)
-    println("Saved $filename_m_mean and $filename_m_var")
+    filename_m_mean, filename_spins_mean = annealing_mean.sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magnetic, interaction, dir_switch)
+    println("Saved $filename_m_mean and $filename_spins_mean")
 end
 
 isinteractive() || main(ARGS)

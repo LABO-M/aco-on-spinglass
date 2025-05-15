@@ -22,12 +22,12 @@ function main(args)
 
         "--sample"
         help = "sample size"
-        default = 100
+        default = 1000
         arg_type = Int
 
         "--magnetic"
         help = "magnetic field value"
-        default = 0.001
+        default = 0.0
         arg_type = Float64
 
         "--interaction"
@@ -46,8 +46,8 @@ function main(args)
     interaction = parsed_args["interaction"]
     dir_switch = magnetic == 0.0 ? "symmetric" : "asymmetric"
 
-    filename_m_mean, filename_m_var = fixed_alpha_mean.sampling(power, beta, start_seed, sample, magnetic, interaction, dir_switch)
-    println("Saved $filename_m_mean and $filename_m_var")
+    filename_spins_mean = fixed_alpha_mean.sampling(power, beta, start_seed, sample, magnetic, interaction, dir_switch)
+    println("Saved $filename_spins_mean")
 end
 
 isinteractive() || main(ARGS)
