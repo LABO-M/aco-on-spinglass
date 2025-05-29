@@ -22,7 +22,7 @@ function main(args)
 
         "--sample"
         help = "sample size"
-        default = 1000
+        default = 10000
         arg_type = Int
 
         "--magnetic"
@@ -44,9 +44,8 @@ function main(args)
     sample = parsed_args["sample"]
     magnetic = parsed_args["magnetic"]
     interaction = parsed_args["interaction"]
-    dir_switch = magnetic == 0.0 ? "symmetric" : "asymmetric"
 
-    filename_spins_mean = fixed_alpha_mean.sampling(power, beta, start_seed, sample, magnetic, interaction, dir_switch)
+    filename_spins_mean = fixed_alpha_mean.sampling(power, beta, start_seed, sample, magnetic, interaction)
     println("Saved $filename_spins_mean")
 end
 

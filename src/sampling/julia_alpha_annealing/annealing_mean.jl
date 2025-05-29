@@ -29,11 +29,11 @@ function sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magne
     spins_mean_series_all = Vector{Vector{Float64}}(undef, sample)
 
     @threads for sample_id in 1:sample
-        Random.seed!(start_seed + sample_id)
+        rng = MersenneTwister(start_seed + sample_id)
 
         # 初期化
         n = 2 ^ power
-        spins = rand(Bool, n)
+        spins = rand(rng, Bool, n)
         spins = 2 .* spins .- 1
         J = ones(n, n) * interaction
         J[diagind(J)] .= 0
@@ -50,11 +50,11 @@ function sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magne
         spins_mean_series = Float64[]
 
         for i in 1:iter
-            determined_spins = [2 * (rand() < 0.5) - 1]
+            determined_spins = [2 * (rand(rng) < 0.5) - 1]
             for new_spins in 2:n
                 external_effect = -magnetic + calculate_external_effect(determined_spins, J, new_spins)
                 prob = decision_probabilities(st1, st0, new_spins, alpha, beta, external_effect)
-                new_spin = 2 * (rand() < prob) - 1
+                new_spin = 2 * (rand(rng) < prob) - 1
                 push!(determined_spins, new_spin)
             end
 
@@ -91,8 +91,6 @@ function sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magne
     mkpath(dir_path)
 
     # --- ファイル名と保存 ---
-    exp_n = power
-
     filename_m_mean = @sprintf("beta%.1e_sample%.1e_n2^%d_tau%.1e_modified_m_mean.csv", beta, sample, power, tau)
     full_path_m_mean = joinpath(dir_path, filename_m_mean)
     CSV.write(full_path_m_mean, df_m_mean)
