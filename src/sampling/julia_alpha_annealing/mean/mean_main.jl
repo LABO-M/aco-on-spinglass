@@ -1,5 +1,5 @@
 using ArgParse
-include("tesannealing.jl")
+include("mean_sampling.jl")
 using .simulation
 
 function main(args)
