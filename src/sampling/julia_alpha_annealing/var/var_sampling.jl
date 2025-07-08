@@ -31,16 +31,11 @@ function simulate(power, tau, beta, start_alpha, seed, iter, sample, magnetic, i
 
     # 初期化
     n = 2 ^ power
-    spins = rand(rng, Bool, n)
-    spins = 2 .* spins .- 1
     J = ones(n, n) * interaction
     J[diagind(J)] .= 0
     h = ones(n) * magnetic
-    st1 = ones(n) * 100.0
-    st0 = ones(n) * 100.0
-    energy = calculate_energy(spins, h, J)
-    st1 += exp(-energy) .* ((spins .+ 1) ./ 2)
-    st0 += exp(-energy) .* ((-spins .+ 1) ./ 2)
+    st1 = ones(n) .* exp(n * (magnetic + interaction)) .* (tau / 2)
+    st0 = ones(n) .* exp(n * (magnetic + interaction)) .* (tau / 2)
     alpha = 0.0
     alpha_inc = 1.0 / iter
     z_var_series = Float64[]
@@ -75,15 +70,10 @@ function simulate(power, tau, beta, start_alpha, seed, iter, sample, interaction
 
     # 初期化
     n = 2 ^ power
-    spins = rand(rng, Bool, n)
-    spins = 2 .* spins .- 1
     J = ones(n, n) * interaction
     J[diagind(J)] .= 0
-    st1 = ones(n) * 100.0
-    st0 = ones(n) * 100.0
-    energy = calculate_energy(spins, 0, J)
-    st1 += exp(-energy) .* ((spins .+ 1) ./ 2)
-    st0 += exp(-energy) .* ((-spins .+ 1) ./ 2)
+    st1 = ones(n) .* exp(n * interaction) .* (tau / 2)
+    st0 = ones(n) .* exp(n * interaction) .* (tau / 2)
     alpha = 0.0
     alpha_inc = 1.0 / iter
     z_var_series = Float64[]
