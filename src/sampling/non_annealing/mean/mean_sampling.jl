@@ -127,10 +127,10 @@ function sampling(power::Int, tau::Float64, beta::Float64, start_alpha::Float64,
     mkpath(dir_path)
 
     # --- ファイル名と保存 ---
-    filename_z_mean = @sprintf("beta%.1e_alpha%.1f_sample%.1e_n2^%d_tau%.1e_z_mean.csv", beta, start_alpha, sample, power, tau)
+    filename_z_mean = @sprintf("beta%.1e_alpha%.3f_sample%.1e_n2^%d_tau%.1e_z_mean.csv", beta, start_alpha, sample, power, tau)
     full_path_z_mean = joinpath(dir_path, filename_z_mean)
     CSV.write(full_path_z_mean, df_z_mean)
-    filename_spins_mean = @sprintf("beta%.1e_alpha%.2f_sample%.1e_n2^%d_tau%.1e_spins_mean.csv", beta, start_alpha, sample, power, tau)
+    filename_spins_mean = @sprintf("beta%.1e_alpha%.3f_sample%.1e_n2^%d_tau%.1e_spins_mean.csv", beta, start_alpha, sample, power, tau)
     full_path_spins_mean = joinpath(dir_path, filename_spins_mean)
     CSV.write(full_path_spins_mean, df_spin_mean)
 
