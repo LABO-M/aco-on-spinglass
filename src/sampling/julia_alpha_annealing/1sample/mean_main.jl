@@ -18,22 +18,12 @@ function main(args)
 
         "--beta"
         help = "coefficient of external field"
-        default = 0.01
+        default = 2
         arg_type = Float64
 
         "--start_seed"
         help = "random seed at the start point"
         default = 42
-        arg_type = Int
-
-        "--iter"
-        help = "iteration number"
-        default = 100000
-        arg_type = Int
-
-        "--sample"
-        help = "sample size"
-        default = 100
         arg_type = Int
 
         "--magnetic"
@@ -53,13 +43,11 @@ function main(args)
     tau = parsed_args["tau"]
     beta = parsed_args["beta"]
     start_seed = parsed_args["start_seed"]
-    iter = parsed_args["iter"]
-    sample = parsed_args["sample"]
     magnetic = parsed_args["magnetic"]
     interaction = parsed_args["interaction"]
 
-    filename_z_mean, filename_spins_mean = simulation.sampling(power, tau, beta, start_seed, iter, sample, magnetic, interaction)
-    println("Saved $filename_z_mean and $filename_spins_mean")
+    file = simulation.sampling(power, tau, beta, start_seed, magnetic, interaction)
+    println("Saved $file")
 
     
 end

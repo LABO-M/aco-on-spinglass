@@ -5,11 +5,8 @@ using CSV
 using DataFrames
 using LinearAlgebra
 using Statistics
-using Base.Threads
 using Printf
 using FilePathsBase
-using Distributed
-using SharedArrays
 
 # --- 共通関数群 ---
 
@@ -50,7 +47,9 @@ function simulate(power::Int, tau::Float64, beta::Float64, seed::Int;
     st1 = fill(1.0, n)
     st0 = fill(1.0, n)
 
+    z_mean_series   = Float64[]
     z_var_series    = Float64[]
+    m_mean_series   = Float64[]
     m_var_series    = Float64[]
     alpha_series    = Float64[]
 
@@ -79,7 +78,9 @@ function simulate(power::Int, tau::Float64, beta::Float64, seed::Int;
         push!(ms, m)
     end
 
+    push!(z_mean_series, mean(zs))
     push!(z_var_series,  var(zs))
+    push!(m_mean_series, mean(ms))
     push!(m_var_series,  var(ms))
     push!(alpha_series,  0.0)
 
@@ -108,7 +109,7 @@ function simulate(power::Int, tau::Float64, beta::Float64, seed::Int;
             st0 .= st0 .* exp(-1 / tau) .+ exp(-energy) .* ((-determined_spins .+ 1) ./ 2)
 
             z = mean(st1 ./ (st1 .+ st0))
-            m = mean((determined_spins .+ 1) ./2)
+            m = mean(determined_spins)
 
             push!(zs, z)
             push!(ms, m)
@@ -116,7 +117,9 @@ function simulate(power::Int, tau::Float64, beta::Float64, seed::Int;
 
         m_mean = mean(ms)
 
+        push!(z_mean_series, mean(zs))
         push!(z_var_series,  var(zs))
+        push!(m_mean_series, m_mean)
         push!(m_var_series,  var(ms))
         push!(alpha_series,  alpha)
 
@@ -125,66 +128,32 @@ function simulate(power::Int, tau::Float64, beta::Float64, seed::Int;
         end
     end
 
-    return z_var_series, m_var_series, alpha_series
+    return z_mean_series, z_var_series, m_mean_series, m_var_series, alpha_series
 end
 
-function sampling(power::Int, tau::Float64, beta::Float64, start_seed::Int, sample::Int, magnetic::Float64, interaction::Float64;
-                  alpha_step::Float64=0.001, warmup_iters::Int=10000, iters_per_alpha::Int=10000)
 
-    # 期待される最大行数（フェーズA1行 + α=0.001..1.0 の1000行 = 1001）
-    rows = 1 + Int(round(1.0 / alpha_step))
 
-    z_var_array     = SharedArray{Float64}(rows, sample)
-    spins_var_array = SharedArray{Float64}(rows, sample)
+function sampling(power::Int, tau::Float64, beta::Float64, seed::Int, magnetic::Float64, interaction::Float64)
+    # --- αも含めて受け取る ---
+    z_mean_series, z_var_series, spins_mean_series, spins_var_series, alpha_series = simulate(power, tau, beta, seed, magnetic=magnetic, interaction=interaction)
 
-    # 事前に NaN で埋める（未使用部を明示）
-    z_var_array    .= NaN
-    spins_var_array .= NaN
+    iter = length(z_mean_series)
+    df = DataFrame(step = 1:iter,
+                   alpha = alpha_series,
+                   z_mean = z_mean_series,
+                   z_var = z_var_series,
+                   spins_mean = spins_mean_series,
+                   spins_var = spins_var_series)
 
-    # 各サンプル列の有効長も記録（必要なら）
-    lengths = SharedArray{Int}(sample)
-
-    @sync @distributed for i in 1:sample
-        seed = start_seed + (i-1) * 1000
-        zvar, svar, alphas = simulate(power, tau, beta, seed;
-                                      magnetic=magnetic, interaction=interaction,
-                                      alpha_step=alpha_step, warmup_iters=warmup_iters, iters_per_alpha=iters_per_alpha)
-
-        L = length(zvar)   # = length(svar) = length(alphas)
-        lengths[i] = L
-
-        # 先頭 L 行だけ書き込み、残りは NaN のまま
-        z_var_array[1:L, i] .= zvar
-        spins_var_array[1:L, i] .= svar
-    end
-
-    # --- DataFrame 化 ---
-    rows_used = rows  # そのまま全行出したい場合。必要なら maximum(lengths) に縮めてもOK
-    df_z_var = DataFrame(step = 1:rows_used)
-    for i in 1:sample
-        df_z_var[!, Symbol("sample$i")] = z_var_array[1:rows_used, i]
-    end
-
-    df_spin_var = DataFrame(step = 1:rows_used)
-    for i in 1:sample
-        df_spin_var[!, Symbol("sample$i")] = spins_var_array[1:rows_used, i]
-    end
-
-    # --- 出力先ディレクトリ作成 ---
     dir_switch = magnetic == 0.0 ? "symmetric" : "asymmetric"
-    dir_path = "/home/mori-lab/shimizu/aco/data/ising/annealing/seed$(start_seed)/$(dir_switch)"
+    dir_path = "/home/mori-lab/shimizu/aco/data/ising/annealing/onesample/$(dir_switch)"
     mkpath(dir_path)
 
-    # --- ファイル名と保存 ---
-    filename_z_var = @sprintf("beta%.1e_sample%.1e_n2^%d_tau%.1e_z_var.csv", beta, sample, power, tau)
-    full_path_z_var = joinpath(dir_path, filename_z_var)
-    CSV.write(full_path_z_var, df_z_var)
-    filename_spins_var = @sprintf("beta%.1e_sample%.1e_n2^%d_tau%.1e_spins_var.csv", beta, sample, power, tau)
-    full_path_spins_var = joinpath(dir_path, filename_spins_var)
-    CSV.write(full_path_spins_var, df_spin_var)
+    filename_all = @sprintf("beta%.1e_n2^%d_tau%.1e_results.csv", beta, power, tau)
+    full_path_all = joinpath(dir_path, filename_all)
+    CSV.write(full_path_all, df)
 
-    return filename_z_var, filename_spins_var
-
+    return filename_all
 end
 
 end

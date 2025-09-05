@@ -25,7 +25,7 @@ function decision_probabilities(st1, st0, index, alpha, beta, external_effect)
     return (z^alpha * exp(-beta * external_effect)) / (z^alpha * exp(-beta * external_effect) + (1 - z)^alpha * exp(beta * external_effect))
 end
 
-function simulate(power, tau, beta, start_alpha, seed, iter, sample, magnetic, interaction)
+function simulate(power, tau, beta, seed, iter, magnetic, interaction)
     #seed
     rng = MersenneTwister(seed)
 
@@ -64,7 +64,7 @@ function simulate(power, tau, beta, start_alpha, seed, iter, sample, magnetic, i
     return z_mean_series, spins_mean_series
 end
 
-function simulate(power, tau, beta, start_alpha, seed, iter, sample, interaction)
+function simulate(power, tau, beta, seed, iter, interaction)
     #seed
     rng = MersenneTwister(seed)
 
@@ -74,7 +74,6 @@ function simulate(power, tau, beta, start_alpha, seed, iter, sample, interaction
     J[diagind(J)] .= 0
     st1 = ones(n) .* exp(n * interaction) .* (tau / 2)
     st0 = ones(n) .* exp(n * interaction) .* (tau / 2)
-    energy = calculate_energy(spins, 0, J)
     alpha = 0.0
     alpha_inc = 1.0 / iter
     z_mean_series = Float64[]
@@ -103,16 +102,16 @@ function simulate(power, tau, beta, start_alpha, seed, iter, sample, interaction
     return z_mean_series, spins_mean_series
 end
 
-function sampling(power::Int, tau::Float64, beta::Float64, start_alpha::Float64, start_seed::Int, iter::Int, sample::Int, magnetic::Float64, interaction::Float64)
+function sampling(power::Int, tau::Float64, beta::Float64, start_seed::Int, iter::Int, sample::Int, magnetic::Float64, interaction::Float64)
     z_mean_array = SharedArray{Float64}(iter, sample)
     spins_mean_array = SharedArray{Float64}(iter, sample)
 
     @sync @distributed for i in 1:sample
         seed = start_seed + (i-1) * 1000
         if magnetic == 0.0
-            z_mean_array[:, i], spins_mean_array[:, i] = simulate(power, tau, beta, start_alpha, seed, iter, sample, interaction)
+            z_mean_array[:, i], spins_mean_array[:, i] = simulate(power, tau, beta, seed, iter, interaction)
         else
-            z_mean_array[:, i], spins_mean_array[:, i] = simulate(power, tau, beta, start_alpha, seed, iter, sample, magnetic, interaction)
+            z_mean_array[:, i], spins_mean_array[:, i] = simulate(power, tau, beta, seed, iter, magnetic, interaction)
         end
     end
 

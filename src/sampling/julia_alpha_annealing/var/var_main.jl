@@ -21,24 +21,14 @@ function main(args)
         default = 0.01
         arg_type = Float64
 
-        "--start_alpha"
-        help = "alpha value at the start point"
-        default = 0.0
-        arg_type = Float64
-
         "--start_seed"
         help = "random seed at the start point"
         default = 42
         arg_type = Int
 
-        "--iter"
-        help = "iteration number"
-        default = 100000
-        arg_type = Int
-
         "--sample"
         help = "sample size"
-        default = 100
+        default = 10
         arg_type = Int
 
         "--magnetic"
@@ -57,14 +47,12 @@ function main(args)
     power = parsed_args["power"]
     tau = parsed_args["tau"]
     beta = parsed_args["beta"]
-    start_alpha = parsed_args["start_alpha"]
     start_seed = parsed_args["start_seed"]
-    iter = parsed_args["iter"]
     sample = parsed_args["sample"]
     magnetic = parsed_args["magnetic"]
     interaction = parsed_args["interaction"]
 
-    filename_z_mean, filename_spins_mean = simulation.sampling(power, tau, beta, start_alpha, start_seed, iter, sample, magnetic, interaction)
+    filename_z_mean, filename_spins_mean = simulation.sampling(power, tau, beta, start_seed, sample, magnetic, interaction)
     println("Saved $filename_z_mean and $filename_spins_mean")
 
     
