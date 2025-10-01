@@ -1,5 +1,5 @@
 using ArgParse
-include("z2_sampling.jl")
+include("long_simulation.jl")
 using .simulation
 
 function main(args)
@@ -8,7 +8,7 @@ function main(args)
     @add_arg_table! s begin
         "--power"
         help = "the number that power of 2"
-        default = 5
+        default = 8
         arg_type = Int
 
         "--tau"
@@ -18,22 +18,12 @@ function main(args)
 
         "--beta"
         help = "coefficient of external field"
-        default = 0.01
+        default = 5.0
         arg_type = Float64
 
         "--start_seed"
         help = "random seed at the start point"
         default = 42
-        arg_type = Int
-
-        "--iter"
-        help = "iteration number"
-        default = 100000
-        arg_type = Int
-
-        "--sample"
-        help = "sample size"
-        default = 100
         arg_type = Int
 
         "--magnetic"
@@ -46,6 +36,21 @@ function main(args)
         default = 0.1
         arg_type = Float64
 
+        "--alpha_step"
+        help = "the increase of alpha"
+        default = 0.001
+        arg_type = Float64
+
+        "--iters_per_alpha"
+        help = "iteration per alpha"
+        default = 100000
+        arg_type = Int
+
+        "--alpha_max"
+        help = "max alpha value"
+        default = 1.0
+        arg_type = Float64
+
     end
 
     parsed_args = parse_args(args, s)
@@ -53,13 +58,19 @@ function main(args)
     tau = parsed_args["tau"]
     beta = parsed_args["beta"]
     start_seed = parsed_args["start_seed"]
-    iter = parsed_args["iter"]
-    sample = parsed_args["sample"]
     magnetic = parsed_args["magnetic"]
     interaction = parsed_args["interaction"]
+    alpha_step = parsed_args["alpha_step"]
+    iters_per_alpha = parsed_args["iters_per_alpha"]
+    alpha_max = parsed_args["alpha_max"]
 
-    filename_z2, filename_z3, filename_z100 = simulation.sampling(power, tau, beta, start_seed, iter, sample, magnetic, interaction)
-    println("Task completed")
+    file = simulation.sampling(
+        power, tau, beta, start_seed, magnetic, interaction;
+        alpha_step=alpha_step,
+        iters_per_alpha=iters_per_alpha,
+        alpha_max=alpha_max
+    )
+    println("Saved $file")
 
     
 end
