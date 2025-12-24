@@ -3,6 +3,7 @@ data/*
 notebooks/data/*
 .vscode/
 __pycache__/
+.venv
 
 # But do not ignore .gitkeep files
 !data/.gitkeep
