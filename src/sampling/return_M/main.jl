@@ -1,6 +1,15 @@
 using ArgParse
-include("simulation.jl")
-include("output.jl")
+using Distributed
+
+# 絶対パスで include（作業ディレクトリ依存を避ける）
+const SIM_PATH = joinpath(@__DIR__, "simulation.jl")
+const OUT_PATH = joinpath(@__DIR__, "output.jl")
+
+include(SIM_PATH)
+include(OUT_PATH)
+
+# ★ワーカーにも simulation.jl を読み込ませる（これが重要）
+@everywhere include($SIM_PATH)
 
 function main(args)
     s = ArgParseSettings()
@@ -8,7 +17,7 @@ function main(args)
     @add_arg_table! s begin
         "--seed"
         help = "Random seed value"
-        default = 1625
+        default = 1000
         arg_type = Int
 
         "--N"
@@ -33,12 +42,12 @@ function main(args)
 
         "--tau"
         help = "Time scale of the pheromone evaporation. Use '-1' for infinite tau."
-        default = 1000
+        default = 100
         arg_type = Int
         
         "--sample"
         help = "Sample size."
-        default = 1000
+        default = 10
         arg_type = Int
 
         "--h"
@@ -76,7 +85,7 @@ function main(args)
 
     alpha_increment_str = string(alpha_increment)
 
-    dir_M = "/home/mori-lab/shimizu/ACO/ACO-on-SpinGlass/src/sampling/return_M/data/seed$(seed)/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
+    dir_M = "/home/mori-lab/shimizu/aco-on-spinglass/src/sampling/return_M/data/seed$(seed)/tau$(tau_str)_h$(h)_J$(J)_α_inc$(alpha_increment_str)"
     if !isdir(dir_M)
         mkpath(dir_M)
     end
