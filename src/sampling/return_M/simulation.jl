@@ -3,68 +3,52 @@ module Simulation
 using Random
 using Distributed
 using SharedArrays
-using LinearAlgebra
 
-export decision_function, discount_factor, calculate_pheromone,
-       simulate_until_alpha, sample_M
+export decision_function, calculate_pheromone,
+       simulate_to_alpha_and_sample_once, sample_ants
 
-# -----------------------------
-# Decision function f(z)  (paper: f(z) = (1-α)/2 + α z)
-# -----------------------------
+# ------------------------------------------------------------
+# Linear decision function (paper: f(z) = (1-α)/2 + α z)
+# z ∈ [0,1], α ∈ [0,1]
+# ------------------------------------------------------------
 @inline function decision_function(z::Float64, alpha::Float64)::Float64
-    return alpha * (z - 0.5) + 0.5
+    return (1.0 - alpha) * 0.5 + alpha * z
 end
 
-# -----------------------------
-# Discount factor D(t)
-# (not required for the recursion form, but kept if you want it)
-# -----------------------------
-function discount_factor(t::Vector{Int}, tau::Int)::Vector{Float64}
-    return (1.0 .- exp.(-t ./ tau)) ./ (1.0 - exp(-1 / tau))
-end
-discount_factor(t::Vector{Int})::Vector{Float64} = Float64.(t)
-
-# -----------------------------
-# Total pheromone (exp(-Energy))
-# Energy style:
-#   E = -h * sum_i s_i  - (J/(N-1)) * sum_{i<j} s_i s_j
-# where s_i ∈ {-1,+1}
-# -----------------------------
-function calculate_pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)::Float64
-    # X ∈ {0,1}^N  ->  s = 2X - 1 ∈ {-1,+1}^N
-    s = 2 .* X .- 1
-
-    # field term
-    E = -h * sum(s)
-
-    # pair term (use i<j to avoid double counting)
-    coef = J / (N - 1)
-    for i in 1:(N-1)
-        si = s[i]
-        @inbounds for j in (i+1):N
-            E += -coef * si * s[j]
-        end
-    end
-
+# ------------------------------------------------------------
+# Total pheromone: exp(-E)
+# Paper energy (uniform h and J):
+#   E = -h * Σ s_i  - (J/(N-1)) * Σ_{i≠j} s_i s_j
+# where s_i = 2X_i - 1 ∈ {-1,+1}
+#
+# For uniform coupling:
+#   Σ_{i≠j} s_i s_j = (Σ s_i)^2 - Σ s_i^2 = (Σ s_i)^2 - N
+#
+# So:
+#   E = -h * m  - (J/(N-1)) * (m^2 - N)
+# with m = Σ s_i = 2*sum(X) - N
+# ------------------------------------------------------------
+@inline function calculate_pheromone(N::Int, X::Vector{Int}, h::Float64, J::Float64)::Float64
+    m = 2 * sum(X) - N
+    E = -h * m - (J / (N - 1)) * (m*m - N)
     return exp(-E)
 end
 
-# -----------------------------
-# Core simulation:
-# Paper-matching sampling rule for Fig.3:
-#   - Run annealing with α(t) increasing by alpha_increment
-#   - At the FIRST time α reaches target_alpha, sample ONCE:
-#       M(i,t) = 2 α(t) (Z(i,t) - 1/2)
-#   - Return that M vector immediately (no extra steps)
+# ------------------------------------------------------------
+# Core simulation for Fig.3-style sampling:
+#   - Slow annealing: alpha starts from alpha0 and increases by alpha_increment
+#   - At the first step where the CURRENT alpha == end_alpha (used for sampling),
+#     return a single sample of M:
+#        M(i) = 2α ( Z(i) - 1/2 )
 #
 # Notes:
-#   - Z is updated via Sm/S recursion with evaporation exp(-1/τ)
-#   - We compute M using the SAME α that was used to generate X at that step.
-# -----------------------------
-function simulate_until_alpha(
+#  - We do NOT add extra burn-in after reaching end_alpha (paper samples at the target α).
+#  - tau = -1 means infinite tau => no evaporation (evap = 1).
+# ------------------------------------------------------------
+function simulate_to_alpha_and_sample_once(
     N::Int,
     alpha0::Float64,
-    target_alpha::Float64,
+    end_alpha::Float64,
     alpha_increment::Float64,
     tau::Int,
     h::Float64,
@@ -74,74 +58,74 @@ function simulate_until_alpha(
 )::Vector{Float64}
 
     X  = zeros(Int, N)
-    Sm = zeros(Float64, N)
-    Z  = fill(0.5, N)
+    S1 = zeros(Float64, N)      # S_1(i,t)
+    Z  = fill(0.5, N)           # Z(i,t) = S1/S
 
-    exp_val = exp(-1 / tau)
+    # evaporation factor
+    evap = (tau == -1) ? 1.0 : exp(-1 / tau)
 
-    # Recursion scalars (store only current S)
     S_prev = 0.0
 
-    alpha = alpha0
+    # clamp alpha range (safety)
+    alpha = clamp(alpha0, 0.0, 1.0)
+    end_alpha = clamp(end_alpha, 0.0, 1.0)
 
     for t in 1:max_steps
-        # decision + sampling X (same step α)
-        prob = decision_function.(Z, alpha)
+        # 1) sample X using current alpha
         @inbounds for i in 1:N
-            X[i] = rand(rng) < prob[i] ? 1 : 0
+            p = decision_function(Z[i], alpha)
+            X[i] = (rand(rng) < p) ? 1 : 0
         end
 
-        # pheromone
+        # 2) pheromone deposit (Boltzmann weight)
         TP = calculate_pheromone(N, X, h, J)
 
-        # update S and Sm (evaporation)
-        S_curr = (t == 1) ? TP : (S_prev * exp_val + TP)
+        # 3) update S and S1 with evaporation
+        S_curr = (t == 1) ? TP : (S_prev * evap + TP)
 
         if t == 1
             @inbounds for i in 1:N
-                Sm[i] = X[i] * TP
+                S1[i] = X[i] * TP
             end
         else
             @inbounds for i in 1:N
-                Sm[i] = Sm[i] * exp_val + X[i] * TP
+                S1[i] = S1[i] * evap + X[i] * TP
             end
         end
 
-        # update Z
+        # 4) update Z
+        invS = 1.0 / S_curr
         @inbounds for i in 1:N
-            Z[i] = Sm[i] / S_curr
+            Z[i] = S1[i] * invS
         end
 
-        # compute M using current α (paper definition)
-        M = 2.0 * alpha .* (Z .- 0.5)
-
-        # --- IMPORTANT: stop exactly when α reaches target ---
-        if alpha >= target_alpha
-            return M
+        # 5) If we've reached the target alpha (the alpha used THIS step), sample and return
+        if alpha >= end_alpha - 1e-15
+            # M(i) = 2α(Z(i)-1/2)
+            return 2.0 * end_alpha .* (Z .- 0.5)
         end
 
-        # increment α for next step
-        alpha = min(alpha + alpha_increment, target_alpha)
+        # 6) anneal alpha for next step
+        alpha = min(alpha + alpha_increment, end_alpha)
 
-        # shift S
         S_prev = S_curr
     end
 
-    error("Reached max_steps without hitting target_alpha. Check alpha_increment / max_steps.")
+    error("Reached max_steps without sampling. Check alpha_increment/end_alpha/max_steps.")
 end
 
-# -----------------------------
-# Sampling wrapper (Fig.3 style):
-#   Repeat "simulate_until_alpha" for 'samples' trials
-#   and concatenate M values into a single vector (length N*samples)
+# ------------------------------------------------------------
+# Sampling wrapper:
+#   Repeat simulate_to_alpha_and_sample_once 'samples' times,
+#   and return flattened vector length N*samples.
 #
-# For Distributed:
-#   - Make sure this module is available on all workers (e.g. @everywhere include("..."))
-# -----------------------------
+# Signature MUST match main.jl:
+#   sample_ants(N, alpha0, end_alpha, alpha_increment, tau, samples, h, J, seed)
+# ------------------------------------------------------------
 function sample_ants(
     N::Int,
     alpha0::Float64,
-    target_alpha::Float64,
+    end_alpha::Float64,
     alpha_increment::Float64,
     tau::Int,
     samples::Int,
@@ -154,25 +138,25 @@ function sample_ants(
     M_samples = SharedArray{Float64}(N, samples)
 
     if use_distributed && nworkers() > 1
-        @sync @distributed for i in 1:samples
-            rng = MersenneTwister(seed + i - 1)
-            M_samples[:, i] = simulate_until_alpha(
-                N, alpha0, target_alpha, alpha_increment, tau, h, J;
+        @sync @distributed for s in 1:samples
+            rng = MersenneTwister(seed + s - 1)
+            M_samples[:, s] = simulate_to_alpha_and_sample_once(
+                N, alpha0, end_alpha, alpha_increment, tau, h, J;
                 rng=rng
             )
         end
     else
-        for i in 1:samples
-            rng = MersenneTwister(seed + i - 1)
-            M_samples[:, i] = simulate_until_alpha(
-                N, alpha0, target_alpha, alpha_increment, tau, h, J;
+        for s in 1:samples
+            rng = MersenneTwister(seed + s - 1)
+            M_samples[:, s] = simulate_to_alpha_and_sample_once(
+                N, alpha0, end_alpha, alpha_increment, tau, h, J;
                 rng=rng
             )
         end
     end
 
-    # concatenate to 1D vector like the paper histogram input
-    return vcat(M_samples...)
+    # flatten to Vector{Float64} of length N*samples
+    return vec(Array(M_samples))
 end
 
 end # module
