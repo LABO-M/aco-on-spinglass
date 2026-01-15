@@ -140,15 +140,15 @@ function main()
     
     # 論文 [cite: 303, 304] より J=0.1でのalpha_cは約0.83...
     # tau=100での厳密なalpha_cは0.83515
-    alpha_c_val = 0.83515
+    
     
     conditions_fig3 = [
-        (tau=100, alpha=0.8), 
-        (tau=100, alpha=alpha_c_val), 
-        (tau=100, alpha=0.9),
-        (tau=1000, alpha=0.8), 
-        (tau=1000, alpha=alpha_c_val), 
-        (tau=1000, alpha=0.9)
+        (tau=100, alpha=0.85), 
+        (tau=100, alpha=0.9087), 
+        (tau=100, alpha=0.95),
+        (tau=1000, alpha=0.85), 
+        (tau=1000, alpha=0.915), 
+        (tau=1000, alpha=0.95)
     ]
     
     df_fig3 = DataFrame(tau=Int[], alpha=Float64[], m_value=Float64[])
@@ -178,15 +178,15 @@ function main()
     # デモ用に T_slow = 5*10^4 にしています。
     # 論文の結果(成功率1.0)を再現するには T_slow = 1000000 に戻してください。
     T_fast = 10000
-    T_slow = 50000  # ★重要: 時間がかかるので減らしています
+    T_slow = 1000000  # ★重要: 時間がかかるので減らしています
     
     trials = 50     # ★重要: 論文は1000回ですが、デモ用に50回
     
     scenarios = [
         (tau=100, T=T_fast, label="tau=100, Fast"),
         (tau=1000, T=T_fast, label="tau=1000, Fast"),
-        (tau=100, T=T_slow, label="tau=100, Slow")
-        # (tau=1000, T=T_slow, label="tau=1000, Slow") # 時間があれば追加
+        (tau=100, T=T_slow, label="tau=100, Slow"),
+        (tau=1000, T=T_slow, label="tau=1000, Slow") # 時間があれば追加
     ]
     
     df_fig4 = DataFrame(alpha=Float64[], success_prob=Float64[], label=String[])
