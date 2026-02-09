@@ -5,6 +5,7 @@ using Dates
 using Plots
 using Statistics
 using StatsPlots
+using Plots.Measures # 余白調整のために追加
 
 if nprocs() == 1
     addprocs(4) 
@@ -57,7 +58,7 @@ function main_visualize()
     J = 0.1
     h = 0.001
     tau = 100
-    T_max = 1000000 
+    T_max = 1000000 # 動作確認のため一旦短縮していますが、必要に応じて戻してください
     every = 1000    
     fixed_alphas = [0.8, 0.95]
 
@@ -66,7 +67,6 @@ function main_visualize()
     # ==========================================
     println("Creating MP4 animation...")
     
-    # 状態管理用の構造体的な役割
     states = [ (mode=m, val=v, Sm=fill(500.0, N), S=1000.0) for (m, v) in [(:anneal, 0.0), (:fixed, 0.8), (:fixed, 0.95)] ]
     anim = Animation()
 
@@ -81,25 +81,29 @@ function main_visualize()
             weight = calculate_boltzmann_weight_fast(N, sum(2 .* X .- 1), h, J)
             
             # 更新
+            decay = exp(-1.0 / tau)
             if t == 1
                 new_S = weight; new_Sm = Float64.(X) .* weight
             else
-                decay = exp(-1.0 / tau)
                 new_S = S_scalar * decay + weight
                 new_Sm = Sm .* decay .+ Float64.(X) .* weight
             end
             states[i] = (mode=mode, val=alpha_val, Sm=new_Sm, S=new_S)
 
             if t % every == 0
-                title_str = mode == :anneal ? "Anneal (α→$(round(curr_alpha, digits=2)))" : "Fixed α=$alpha_val"
+                title_str = mode == :anneal ? "Annealing (α→$(round(curr_alpha, digits=2)))" : "α=$alpha_val"
                 p = histogram(Zm, bins=-0.05:0.05:1.05, xlims=(-0.05, 1.05), ylims=(0, N),
-                              title=title_str, xlabel="Z", ylabel="Count", legend=false, color=:skyblue)
+                              title=title_str, xlabel="Z", ylabel="Count", legend=false, 
+                              color=:skyblue, 
+                              bottom_margin=8Plots.mm, # 下側の余白を確保
+                              left_margin=5Plots.mm)   # 左側の余白を確保
                 push!(plots_step, p)
             end
         end
         
         if t % every == 0
-            combined_p = plot(plots_step..., layout=(1, 3), size=(1000, 350))
+            # 全体のレイアウトでも余白を調整
+            combined_p = plot(plots_step..., layout=(1, 3), size=(1200, 400), margin=3Plots.mm)
             frame(anim, combined_p)
         end
     end
@@ -107,13 +111,15 @@ function main_visualize()
     println("Saved evolution_comparison.mp4")
 
     # ==========================================
-    # 2. 成功率の比較 (動的なαリスト)
+    # 2. 成功率の比較
     # ==========================================
     println("Comparing Success Probabilities...")
-    trials = 100 # 100万ステップは重いため試行数を調整
+    trials = 100 
     T_comp = 1000000
     
-    p_comp = plot(title="Success Rate Comparison", xlabel="Steps", ylabel="Rate", ylims=(0, 1.1), legend=:bottomright)
+    p_comp = plot(title="Success Rate Comparison", xlabel="Steps", ylabel="Rate", 
+                  ylims=(0, 1.1), legend=:bottomright, 
+                  bottom_margin=5Plots.mm, left_margin=5Plots.mm)
 
     # アニーリング
     println("Processing Annealing...")
