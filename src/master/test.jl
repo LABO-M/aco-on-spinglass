@@ -58,9 +58,9 @@ function main_visualize()
     J = 0.1
     h = 0.001
     tau = 100
-    T_max = 1000000 # 動作確認のため一旦短縮していますが、必要に応じて戻してください
+    T_max = 300000 # 動作確認のため一旦短縮していますが、必要に応じて戻してください
     every = 1000    
-    fixed_alphas = [0.8, 0.95]
+    fixed_alphas = [0.8, 0.9]
 
     # ==========================================
     # 1. アニメーション作成 (並列比較)
@@ -107,7 +107,7 @@ function main_visualize()
             frame(anim, combined_p)
         end
     end
-    mp4(anim, "evolution_comparison.mp4", fps = 15)
+    mp4(anim, "30_evolution_comparison.mp4", fps = 15)
     println("Saved evolution_comparison.mp4")
 
     # ==========================================
